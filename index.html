@@ -310,6 +310,21 @@
               <option value="EDICIÓN LIM.">EDICIÓN LIM.</option>
             </select>
           </div>
+          <div class="form-group full-width">
+            <label class="form-label">FOTO DEL PRODUCTO (opcional)</label>
+            <div id="photo-drop-area" onclick="document.getElementById('a-photo').click()" style="border:1.5px dashed var(--border);border-radius:10px;padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--cream);">
+              <div id="photo-preview" style="display:none;margin-bottom:0.75rem;">
+                <img id="photo-preview-img" style="max-height:160px;max-width:100%;border-radius:8px;object-fit:cover;" />
+              </div>
+              <div id="photo-placeholder">
+                <p style="font-size:26px;margin-bottom:4px;">📷</p>
+                <p style="font-size:12px;color:var(--muted);">Tocá para elegir una foto desde tu celular o PC</p>
+                <p style="font-size:11px;color:var(--muted);margin-top:2px;">JPG, PNG o WEBP · Máx 2MB</p>
+              </div>
+            </div>
+            <input type="file" id="a-photo" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)" />
+            <button type="button" id="photo-remove-btn" onclick="removePhoto()" style="display:none;margin-top:6px;background:none;border:none;font-size:11px;color:#A32D2D;cursor:pointer;font-family:inherit;">✕ Quitar foto</button>
+          </div>
         </div>
         <button class="save-btn" onclick="addProduct()">+ Guardar producto</button>
       </div>
@@ -337,7 +352,7 @@
 
 <script>
 const ADMIN_PASSWORD = 'ElbioCampeon2025';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzBO2Ilk3E7JqubPhem9dhdIjtcjuvJ5IqGqlJrwCZJuW7Pl3QKOxoQ-HjS0v7gCoAMRQ/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4XDqJapnqQqxukNof-kbcHFGubv5xXG5_0JSsPa7MAdyvqCVKCKRpOA5rWb6PvSO-5Q/exec';
 
 const DEFAULT_PRODUCTS = [
   { id:1, name:'Tabla de asado grande', desc:'Madera maciza, grabado logo ELEF, incluye canaleta', price:2800, cat:'asado', icon:'🪵', badge:'NUEVO' },
@@ -356,6 +371,7 @@ let products = [...DEFAULT_PRODUCTS];
 let orders = [];
 let currentFilter = 'all';
 let adminAuthenticated = false;
+let photoBase64 = null;
 
 // ── CARRITO PERSISTENTE (localStorage) ───────────────────────────────────────
 function saveCart() {
@@ -402,8 +418,10 @@ function renderProducts(filter) {
   }
   grid.innerHTML = list.map(p => `
     <div class="product-card">
-      <div class="product-img">
-        <span class="product-emoji">${p.icon}</span>
+      <div class="product-img" style="${p.photo ? 'background:none;' : ''}">
+        ${p.photo
+          ? `<img src="${p.photo}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" />`
+          : `<span class="product-emoji">${p.icon}</span>`}
         ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
       </div>
       <div class="product-info">
@@ -585,6 +603,35 @@ function renderAdminOrders() {
     </tr>`).join('');
 }
 
+function handlePhotoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    showToast('La foto es muy grande. Máximo 2MB.');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    photoBase64 = e.target.result;
+    document.getElementById('photo-preview-img').src = photoBase64;
+    document.getElementById('photo-preview').style.display = 'block';
+    document.getElementById('photo-placeholder').style.display = 'none';
+    document.getElementById('photo-remove-btn').style.display = 'inline-block';
+    document.getElementById('photo-drop-area').style.borderColor = 'var(--gold)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto() {
+  photoBase64 = null;
+  document.getElementById('a-photo').value = '';
+  document.getElementById('photo-preview').style.display = 'none';
+  document.getElementById('photo-placeholder').style.display = 'block';
+  document.getElementById('photo-remove-btn').style.display = 'none';
+  document.getElementById('photo-drop-area').style.borderColor = 'var(--border)';
+}
+
 function addProduct() {
   const name = document.getElementById('a-name').value.trim();
   const price = parseInt(document.getElementById('a-price').value);
@@ -598,7 +645,8 @@ function addProduct() {
     price,
     cat: document.getElementById('a-cat').value,
     icon: document.getElementById('a-icon').value,
-    badge: document.getElementById('a-badge').value
+    badge: document.getElementById('a-badge').value,
+    photo: photoBase64 || ''
   };
 
   const btn = document.querySelector('.save-btn');
@@ -613,6 +661,7 @@ function addProduct() {
   .then(() => {
     products.push(newProduct);
     ['a-name','a-price','a-desc'].forEach(id => document.getElementById(id).value='');
+    removePhoto();
     showToast(`"${name}" publicado en el catálogo`);
     renderProducts(currentFilter);
   })
