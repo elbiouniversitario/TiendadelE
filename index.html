@@ -33,7 +33,7 @@
   .nav-links a:hover, .nav-links a.active { color: var(--gold); border-bottom-color: var(--gold); }
   .cart-btn { background: rgba(201,168,76,0.15); border: 0.5px solid rgba(201,168,76,0.4); border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 13px; color: var(--gold); display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
   .cart-btn:hover { background: rgba(201,168,76,0.25); }
-  .cart-count { background: var(--gold); color: var(--navy); border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  .cart-count { background: var(--gold); color: var(--navy); border-radius: 50%; min-width: 18px; height: 18px; padding: 0 4px; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
 
   section { display: none; }
   section.active { display: block; }
@@ -465,9 +465,20 @@ function addToCart(id) {
 
 function updateCartCount() {
   const total = cart.reduce((s,i) => s+i.qty, 0);
+  console.log('=== UPDATE CART COUNT ===');
+  console.log('Cart array:', cart);
+  console.log('Total items:', total);
   const el = document.getElementById('cart-count-nav');
-  el.textContent = total;
-  el.style.display = total > 0 ? 'flex' : 'none';
+  console.log('Element found:', el);
+  console.log('Setting text to:', total);
+  
+  // Forzar actualización del DOM
+  el.textContent = '';
+  setTimeout(() => {
+    el.textContent = total;
+    el.style.display = total > 0 ? 'flex' : 'none';
+    console.log('Element after update:', el.textContent);
+  }, 0);
 }
 
 function renderCart() {
