@@ -405,15 +405,20 @@ let photoBase64 = null;
 // ── CARRITO PERSISTENTE (localStorage) ───────────────────────────────────────
 function saveCart() {
   try {
-    const cartData = JSON.stringify(cart);
-    console.log('Guardando carrito:', cart);
-    debugLog(`Guardando ${cart.length} productos: ${cart.map(i => i.name).join(', ')}`);
+    // Guardar solo ID y cantidad, no todo el objeto
+    const cartLite = cart.map(item => ({
+      id: item.id,
+      qty: item.qty
+    }));
+    const cartData = JSON.stringify(cartLite);
+    console.log('Guardando carrito optimizado:', cartLite);
+    debugLog(`Guardando ${cartLite.length} productos (solo IDs)`);
     console.log('JSON a guardar:', cartData);
     localStorage.setItem('elef_cart', cartData);
     // Verificar que se guardó correctamente
     const verificar = localStorage.getItem('elef_cart');
     console.log('Verificación - guardado:', verificar);
-    debugLog(`✓ Guardado OK en localStorage`);
+    debugLog(`✓ Guardado OK (${cartData.length} chars)`);
     console.log('¿Coincide?', verificar === cartData);
   } catch(e) {
     console.error('Error al guardar carrito:', e);
@@ -424,20 +429,32 @@ function loadCart() {
   try {
     const saved = localStorage.getItem('elef_cart');
     console.log('Cargando carrito desde localStorage:', saved);
-    const parsed = saved ? JSON.parse(saved) : [];
-    console.log('Carrito parseado:', parsed);
-    debugLog(`Cargando carrito: ${parsed.length} productos`);
-    if (parsed.length > 0) {
-      debugLog(`Productos: ${parsed.map(i => i.name).join(', ')}`);
+    const cartLite = saved ? JSON.parse(saved) : [];
+    console.log('Carrito lite parseado:', cartLite);
+    debugLog(`Cargando carrito: ${cartLite.length} items`);
+    
+    // Reconstruir el carrito completo con los datos de products
+    const fullCart = cartLite.map(item => {
+      const product = products.find(p => String(p.id) === String(item.id));
+      if (product) {
+        return {...product, qty: item.qty};
+      }
+      return null;
+    }).filter(Boolean);
+    
+    debugLog(`Reconstruido: ${fullCart.length} productos`);
+    if (fullCart.length > 0) {
+      debugLog(`Productos: ${fullCart.map(i => i.name).join(', ')}`);
     }
-    return parsed;
+    return fullCart;
   } catch(e) { 
     console.error('Error al cargar carrito:', e);
     debugLog(`✗ ERROR al cargar: ${e.message}`);
     return []; 
   }
 }
-let cart = loadCart();
+let cart = []; // Se cargará después de tener los productos
+
 
 // ── PRODUCTOS DESDE GOOGLE SHEETS ────────────────────────────────────────────
 function loadProductsFromSheets() {
@@ -834,6 +851,7 @@ function secretClick() {
 }
 
 // ── INICIO ────────────────────────────────────────────────────────────────────
+cart = loadCart(); // Cargar carrito DESPUÉS de tener products
 updateCartCount();
 loadProductsFromSheets();
 </script>
