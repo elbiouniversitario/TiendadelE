@@ -469,13 +469,19 @@ function loadProductsFromSheets() {
       } else {
         products = [...DEFAULT_PRODUCTS];
       }
+      // Recargar carrito DESPUÉS de tener los productos actualizados
+      cart = loadCart();
       renderProducts(currentFilter);
       updateCartCount();
+      debugLog('Productos cargados, carrito reconstruido');
     })
     .catch(() => {
       products = [...DEFAULT_PRODUCTS];
+      // Recargar carrito DESPUÉS de tener los productos
+      cart = loadCart();
       renderProducts(currentFilter);
       updateCartCount();
+      debugLog('Error cargando productos, usando defaults');
     });
 }
 
@@ -851,7 +857,6 @@ function secretClick() {
 }
 
 // ── INICIO ────────────────────────────────────────────────────────────────────
-cart = loadCart(); // Cargar carrito DESPUÉS de tener products
 updateCartCount();
-loadProductsFromSheets();
+loadProductsFromSheets(); // Esto cargará products Y luego cart
 </script>
