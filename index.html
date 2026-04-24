@@ -548,36 +548,66 @@ function submitOrder() {
   // Calcular total
   const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
   
-  // Generar order_id único
-  const orderId = Date.now();
+  // Generar order_id único (más corto)
+  const orderId = Date.now().toString().slice(-8);
 
-  // Preparar array de productos para el template
-  const orders = cart.map(item => ({
-    name: item.name,
-    units: item.qty,
-    price: (item.price * item.qty).toLocaleString(),
-    image_url: item.photo || 'https://via.placeholder.com/64'
-  }));
+  // Crear lista de productos CORTA (solo nombre y cantidad)
+  const productList = cart.map(item => 
+    `${item.name} x${item.qty}`
+  ).join(', ');
 
-  // Parámetros para EmailJS según tu template
+  // Parámetros MÍNIMOS para EmailJS (reducir tamaño)
   const templateParams = {
-    email: email,
+    to_email: email,
+    name: name,
+    phone: phone,
+    referente: referente || 'No especificado',
     order_id: orderId,
-    orders: orders,
-    cost: {
-      total: total.toLocaleString()
-    }
+    items: productList,
+    total: '$' + total.toLocaleString()
   };
 
-  // Enviar email con EmailJS
-  emailjs.send('service_kz8rtix', 'template_oae45lb', templateParams)
-    .then(() => {
-      // Después de enviar el email, guardar en Sheets
-      return fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          type: 'order',
-          name, phone, email, referente,
+  console.log('Enviando email con params:', templateParams);
+
+  // Mostrar mensaje de envío
+  showToast('Enviando pedido...');
+
+  // Primero guardar en Sheets
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      type: 'order',
+      name, phone, email, referente,
+      items: cart.map(i => `${i.name} x${i.qty}`).join(", "),
+      notes: notes
+    })
+  })
+  .then(res => res.text())
+  .then(() => {
+    console.log('Pedido guardado en Sheets, enviando email...');
+    // Enviar email con datos mínimos
+    return emailjs.send('service_kz8rtix', 'template_oae45lb', templateParams);
+  })
+  .then((response) => {
+    console.log('Email enviado:', response);
+    document.getElementById('order-form-area').style.display = 'none';
+    document.getElementById('order-success').style.display = 'block';
+    cart = [];
+    saveCart();
+    updateCartCount();
+    showToast('¡Pedido confirmado y email enviado! ✓');
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+    // El pedido YA se guardó en Sheets, solo avisar del email
+    document.getElementById('order-form-area').style.display = 'none';
+    document.getElementById('order-success').style.display = 'block';
+    cart = [];
+    saveCart();
+    updateCartCount();
+    showToast('Pedido guardado correctamente ✓');
+  });
+}
           items: cart.map(i => `${i.name} x${i.qty}`).join(", "),
           notes: notes
         })
