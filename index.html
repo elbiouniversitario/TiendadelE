@@ -550,7 +550,7 @@ function submitOrder() {
   const productList = cart.map(item => `${item.name} x${item.qty}`).join(', ');
 
   const templateParams = {
-    to_email: email,
+    email: email,
     name: name,
     phone: phone,
     referente: referente || 'No especificado',
@@ -558,6 +558,11 @@ function submitOrder() {
     items: productList,
     total: '$' + total.toLocaleString()
   };
+
+  console.log('=== DATOS DEL PEDIDO ===');
+  console.log('Service ID: service_kz8rtix');
+  console.log('Template ID: template_oae45lb');
+  console.log('Parámetros:', templateParams);
 
   showToast('Enviando pedido...');
 
@@ -572,9 +577,14 @@ function submitOrder() {
   })
   .then(res => res.text())
   .then(() => {
+    console.log('✓ Pedido guardado en Sheets');
+    console.log('Intentando enviar email...');
     return emailjs.send('service_kz8rtix', 'template_oae45lb', templateParams);
   })
-  .then(() => {
+  .then((response) => {
+    console.log('✓ EMAIL ENVIADO EXITOSAMENTE!', response);
+    console.log('Status:', response.status);
+    console.log('Text:', response.text);
     document.getElementById('order-form-area').style.display = 'none';
     document.getElementById('order-success').style.display = 'block';
     cart = [];
@@ -582,13 +592,19 @@ function submitOrder() {
     updateCartCount();
     showToast('¡Pedido confirmado y email enviado! ✓');
   })
-  .catch(() => {
+  .catch((error) => {
+    console.error('✗ ERROR AL ENVIAR EMAIL:', error);
+    console.error('Tipo de error:', error.name);
+    console.error('Mensaje:', error.message);
+    console.error('Status:', error.status);
+    console.error('Text:', error.text);
+    // El pedido se guardó igual en Sheets
     document.getElementById('order-form-area').style.display = 'none';
     document.getElementById('order-success').style.display = 'block';
     cart = [];
     saveCart();
     updateCartCount();
-    showToast('Pedido guardado ✓');
+    showToast('Pedido guardado (revisar consola para email)');
   });
 }
 
