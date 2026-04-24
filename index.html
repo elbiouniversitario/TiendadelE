@@ -385,13 +385,30 @@ let photoBase64 = null;
 
 // ── CARRITO PERSISTENTE (localStorage) ───────────────────────────────────────
 function saveCart() {
-  localStorage.setItem('elef_cart', JSON.stringify(cart));
+  try {
+    const cartData = JSON.stringify(cart);
+    console.log('Guardando carrito:', cart);
+    console.log('JSON a guardar:', cartData);
+    localStorage.setItem('elef_cart', cartData);
+    // Verificar que se guardó correctamente
+    const verificar = localStorage.getItem('elef_cart');
+    console.log('Verificación - guardado:', verificar);
+    console.log('¿Coincide?', verificar === cartData);
+  } catch(e) {
+    console.error('Error al guardar carrito:', e);
+  }
 }
 function loadCart() {
   try {
     const saved = localStorage.getItem('elef_cart');
-    return saved ? JSON.parse(saved) : [];
-  } catch(e) { return []; }
+    console.log('Cargando carrito desde localStorage:', saved);
+    const parsed = saved ? JSON.parse(saved) : [];
+    console.log('Carrito parseado:', parsed);
+    return parsed;
+  } catch(e) { 
+    console.error('Error al cargar carrito:', e);
+    return []; 
+  }
 }
 let cart = loadCart();
 
@@ -454,10 +471,21 @@ function filterProducts(cat, btn) {
 
 // ── CARRITO ───────────────────────────────────────────────────────────────────
 function addToCart(id) {
+  console.log('=== AGREGAR AL CARRITO ===');
+  console.log('ID producto:', id);
   const p = products.find(x => String(x.id) === String(id));
+  console.log('Producto encontrado:', p);
   if (!p) return;
   const ex = cart.find(x => String(x.id) === String(id));
-  if (ex) ex.qty++; else cart.push({...p, qty:1});
+  console.log('Producto ya en carrito?:', ex);
+  if (ex) {
+    ex.qty++;
+    console.log('Incrementando cantidad a:', ex.qty);
+  } else {
+    cart.push({...p, qty:1});
+    console.log('Agregando nuevo producto al carrito');
+  }
+  console.log('Carrito completo:', cart);
   saveCart();
   updateCartCount();
   showToast(`"${p.name}" agregado al carrito`);
