@@ -150,6 +150,12 @@
 
   @media (max-width: 540px) { .form-row, .product-form-grid { grid-template-columns: 1fr; } .hero-strip { gap: 1.5rem; } .nav-links { gap: 0.9rem; } }
 </style>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script type="text/javascript">
+  (function(){
+    emailjs.init("2yMyJP3DeUV0Zcewo");
+  })();
+</script>
 
 <nav>
   <div class="nav-logo" id="logo-clicker" onclick="secretClick()" style="cursor:pointer">
@@ -532,28 +538,64 @@ function submitOrder() {
   const phone = document.getElementById('f-phone').value.trim();
   const email = document.getElementById('f-email').value.trim();
   const referente = document.getElementById('f-referente').value.trim();
+  const notes = document.getElementById('f-notes').value.trim();
+  
   if (!name || !phone || !email) {
     showToast('Completá nombre, WhatsApp y email');
     return;
   }
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      type: 'order',
-      name, phone, email, referente,
-      items: cart.map(i => `${i.name} x${i.qty}`).join(", "),
-      notes: document.getElementById('f-notes').value
+
+  // Calcular total
+  const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+  
+  // Generar order_id único
+  const orderId = Date.now();
+
+  // Preparar array de productos para el template
+  const orders = cart.map(item => ({
+    name: item.name,
+    units: item.qty,
+    price: (item.price * item.qty).toLocaleString(),
+    image_url: item.photo || 'https://via.placeholder.com/64'
+  }));
+
+  // Parámetros para EmailJS según tu template
+  const templateParams = {
+    email: email,
+    order_id: orderId,
+    orders: orders,
+    cost: {
+      total: total.toLocaleString()
+    }
+  };
+
+  // Enviar email con EmailJS
+  emailjs.send('service_kz8rtix', 'template_oae45lb', templateParams)
+    .then(() => {
+      // Después de enviar el email, guardar en Sheets
+      return fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          type: 'order',
+          name, phone, email, referente,
+          items: cart.map(i => `${i.name} x${i.qty}`).join(", "),
+          notes: notes
+        })
+      });
     })
-  })
-  .then(res => res.text())
-  .then(() => {
-    document.getElementById('order-form-area').style.display = 'none';
-    document.getElementById('order-success').style.display = 'block';
-    cart = [];
-    saveCart();
-    updateCartCount();
-  })
-  .catch(() => showToast("Error al enviar pedido"));
+    .then(res => res.text())
+    .then(() => {
+      document.getElementById('order-form-area').style.display = 'none';
+      document.getElementById('order-success').style.display = 'block';
+      cart = [];
+      saveCart();
+      updateCartCount();
+      showToast('Pedido confirmado y email enviado ✓');
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+      showToast("Error al enviar pedido o email");
+    });
 }
 
 function resetOrder() {
