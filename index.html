@@ -223,6 +223,10 @@
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label">REFERENTE DEL CLUB</label>
+        <input class="form-input" id="f-referente" placeholder="Persona que entregará su pedido" />
+      </div>
+      <div class="form-group">
         <label class="form-label">NOTAS ADICIONALES</label>
         <textarea class="form-textarea" id="f-notes" placeholder="Talla, color, grabado personalizado, fecha de entrega..."></textarea>
       </div>
@@ -527,15 +531,16 @@ function submitOrder() {
   const name = document.getElementById('f-name').value.trim();
   const phone = document.getElementById('f-phone').value.trim();
   const email = document.getElementById('f-email').value.trim();
-  if (!name || (!phone && !email)) {
-    showToast('Completá nombre y al menos un contacto');
+  const referente = document.getElementById('f-referente').value.trim();
+  if (!name || !phone || !email) {
+    showToast('Completá nombre, WhatsApp y email');
     return;
   }
   fetch(SCRIPT_URL, {
     method: "POST",
     body: JSON.stringify({
       type: 'order',
-      name, phone, email,
+      name, phone, email, referente,
       items: cart.map(i => `${i.name} x${i.qty}`).join(", "),
       notes: document.getElementById('f-notes').value
     })
@@ -554,7 +559,7 @@ function submitOrder() {
 function resetOrder() {
   document.getElementById('order-form-area').style.display = 'block';
   document.getElementById('order-success').style.display = 'none';
-  ['f-name','f-phone','f-email','f-notes'].forEach(id => document.getElementById(id).value='');
+  ['f-name','f-phone','f-email','f-referente','f-notes'].forEach(id => document.getElementById(id).value='');
   showSection('catalog');
 }
 
