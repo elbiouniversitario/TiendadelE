@@ -149,6 +149,39 @@
   .toast.show { opacity: 1; transform: translateY(0); }
 
   @media (max-width: 540px) { .form-row, .product-form-grid { grid-template-columns: 1fr; } .hero-strip { gap: 1.5rem; } .nav-links { gap: 0.9rem; } }
+
+  /* SKELETON LOADING */
+  @keyframes shimmer {
+    0% { background-position: -600px 0; }
+    100% { background-position: 600px 0; }
+  }
+  .skeleton-card {
+    background: white;
+    border-radius: 12px;
+    border: 0.5px solid var(--border);
+    overflow: hidden;
+  }
+  .skeleton-img {
+    width: 100%;
+    aspect-ratio: 4/5;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 600px 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  .skeleton-info { padding: 0.9rem 1rem; }
+  .skeleton-line {
+    border-radius: 4px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 600px 100%;
+    animation: shimmer 1.4s infinite;
+    margin-bottom: 8px;
+  }
+  .skeleton-line.title { height: 13px; width: 70%; }
+  .skeleton-line.desc  { height: 10px; width: 90%; }
+  .skeleton-line.desc2 { height: 10px; width: 60%; }
+  .skeleton-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .skeleton-price { height: 18px; width: 35%; border-radius: 4px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 600px 100%; animation: shimmer 1.4s infinite; }
+  .skeleton-btn   { height: 28px; width: 28%; border-radius: 6px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 600px 100%; animation: shimmer 1.4s infinite; }
 </style>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="text/javascript">
@@ -424,9 +457,26 @@ let cart = []; // Se cargará después de tener los productos
 
 
 // ── PRODUCTOS DESDE GOOGLE SHEETS ────────────────────────────────────────────
-function loadProductsFromSheets() {
+function showSkeletons() {
   const grid = document.getElementById('products-grid');
-  grid.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:1rem">Cargando productos...</p>';
+  const skeletonCard = `
+    <div class="skeleton-card">
+      <div class="skeleton-img"></div>
+      <div class="skeleton-info">
+        <div class="skeleton-line title"></div>
+        <div class="skeleton-line desc"></div>
+        <div class="skeleton-line desc2"></div>
+        <div class="skeleton-footer">
+          <div class="skeleton-price"></div>
+          <div class="skeleton-btn"></div>
+        </div>
+      </div>
+    </div>`;
+  grid.innerHTML = skeletonCard.repeat(6);
+}
+
+function loadProductsFromSheets() {
+  showSkeletons();
 
   fetch(SCRIPT_URL)
     .then(r => r.json())
@@ -436,14 +486,12 @@ function loadProductsFromSheets() {
       } else {
         products = [...DEFAULT_PRODUCTS];
       }
-      // Recargar carrito DESPUÉS de tener los productos actualizados
       cart = loadCart();
       renderProducts(currentFilter);
       updateCartCount();
     })
     .catch(() => {
       products = [...DEFAULT_PRODUCTS];
-      // Recargar carrito DESPUÉS de tener los productos
       cart = loadCart();
       renderProducts(currentFilter);
       updateCartCount();
@@ -751,22 +799,25 @@ function addProduct() {
   btn.textContent = 'Guardando...';
   btn.disabled = true;
 
+  // Agregamos el producto localmente de inmediato (no esperar respuesta)
+  products.push(newProduct);
+  ['a-name','a-price','a-desc'].forEach(id => document.getElementById(id).value='');
+  removePhoto();
+  showToast(`"${name}" publicado en el catálogo`);
+  renderProducts(currentFilter);
+  btn.textContent = '+ Guardar producto';
+  btn.disabled = false;
+
+  // Enviamos a Sheets en segundo plano con no-cors (evita el error de CORS)
   fetch(SCRIPT_URL, {
     method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ type: 'product', ...newProduct })
   })
-  .then(r => r.text())
-  .then(() => {
-    products.push(newProduct);
-    ['a-name','a-price','a-desc'].forEach(id => document.getElementById(id).value='');
-    removePhoto();
-    showToast(`"${name}" publicado en el catálogo`);
-    renderProducts(currentFilter);
-  })
-  .catch(() => showToast('Error al guardar en Sheets'))
-  .finally(() => {
-    btn.textContent = '+ Guardar producto';
-    btn.disabled = false;
+  .catch(() => {
+    // Si falla el envío a Sheets, el producto igual quedó en la página
+    console.warn('No se pudo guardar en Sheets, pero el producto quedó en pantalla.');
   });
 }
 
@@ -807,5 +858,3 @@ function secretClick() {
 updateCartCount();
 loadProductsFromSheets(); // Esto cargará products Y luego cart
 </script>
-
- 
