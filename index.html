@@ -240,6 +240,12 @@ const SIZE_DATA = {
   }
 };
 
+function openSizeModalById(btn) {
+  var pid = btn.getAttribute('data-pid');
+  var p = products.find(function(x){ return String(x.id) === String(pid); });
+  if (p) openSizeModal(p.name, p.cat);
+}
+
 function openSizeModal(productName, cat) {
   const data = SIZE_DATA[cat] || SIZE_DATA['indumentaria'];
   document.getElementById('size-modal-title').textContent = 'Guía de talles — ' + productName;
@@ -618,7 +624,7 @@ function renderProducts(filter) {
       <div class="product-info">
         <p class="product-name">${p.name}</p>
         <p class="product-desc">${p.desc}</p>
-        ${['indumentaria','remeras','abrigos'].includes(p.cat) ? `<button class="size-btn" onclick="event.stopPropagation();openSizeModal('${p.name}','${p.cat}')">📏 Talles</button>` : ''}
+        ${['indumentaria','remeras','abrigos'].includes(p.cat) ? `<button class="size-btn" data-pid="${p.id}" onclick="openSizeModalById(this)">📏 Talles</button>` : ''}
         <div class="product-footer">
           <span class="product-price">$${Number(p.price).toLocaleString()}</span>
           <button class="add-btn" onclick="addToCart(${p.id})">+ Agregar</button>
