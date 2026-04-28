@@ -182,8 +182,86 @@
   .skeleton-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
   .skeleton-price { height: 18px; width: 35%; border-radius: 4px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 600px 100%; animation: shimmer 1.4s infinite; }
   .skeleton-btn   { height: 28px; width: 28%; border-radius: 6px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 600px 100%; animation: shimmer 1.4s infinite; }
+
+  /* TABLA DE TALLES */
+  .size-modal-overlay { position:fixed; inset:0; background:rgba(10,15,30,0.75); z-index:600; display:flex; align-items:center; justify-content:center; padding:1rem; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+  .size-modal-overlay.open { opacity:1; pointer-events:all; }
+  .size-modal-box { background:white; border-radius:14px; width:100%; max-width:560px; max-height:88vh; overflow-y:auto; padding:1.5rem; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.3); }
+  .size-modal-close { position:absolute; top:12px; right:14px; background:var(--cream); border:none; border-radius:50%; width:30px; height:30px; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--dark); }
+  .size-modal-title { font-family:Georgia,serif; font-size:1.1rem; font-weight:400; color:var(--navy); margin-bottom:0.3rem; }
+  .size-modal-sub { font-size:11px; color:var(--muted); margin-bottom:1.25rem; }
+  .size-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .size-table th { background:var(--navy); color:white; padding:7px 10px; text-align:center; font-weight:600; font-size:11px; letter-spacing:0.05em; }
+  .size-table th:first-child { text-align:left; border-radius:6px 0 0 0; }
+  .size-table th:last-child { border-radius:0 6px 0 0; }
+  .size-table td { padding:7px 10px; text-align:center; border-bottom:0.5px solid var(--border); color:var(--dark); }
+  .size-table td:first-child { text-align:left; font-weight:600; color:var(--navy); }
+  .size-table tr:last-child td { border-bottom:none; }
+  .size-table tr:nth-child(even) td { background:var(--cream); }
+  .size-hint { font-size:11px; color:var(--muted); margin-top:1rem; line-height:1.6; padding:10px 12px; background:var(--gold-light); border-radius:8px; border-left:3px solid var(--gold); }
+  .size-btn { background:none; border:0.5px solid var(--border); border-radius:5px; padding:4px 8px; font-size:10px; color:var(--muted); cursor:pointer; font-family:inherit; transition:all 0.15s; white-space:nowrap; }
+  .size-btn:hover { border-color:var(--navy); color:var(--navy); }
 </style>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
+// ── TABLA DE TALLES ───────────────────────────────────────────────────────────
+const SIZE_DATA = {
+  remeras: {
+    hint: 'Para remeras y polos: medí el pecho rodeando la parte más ancha del torso. El largo se mide desde el hombro hasta el bajo.',
+    rows: [
+      { talla:'XS', pecho:'80-84', cintura:'66-70', cadera:'86-90', largo:'66' },
+      { talla:'S',  pecho:'84-88', cintura:'70-74', cadera:'90-94', largo:'68' },
+      { talla:'M',  pecho:'88-92', cintura:'74-78', cadera:'94-98', largo:'70' },
+      { talla:'L',  pecho:'92-97', cintura:'78-83', cadera:'98-103',largo:'72' },
+      { talla:'XL', pecho:'97-102',cintura:'83-88', cadera:'103-108',largo:'74' },
+      { talla:'XXL',pecho:'102-108',cintura:'88-94',cadera:'108-114',largo:'76' },
+    ]
+  },
+  indumentaria: {
+    hint: 'Para remeras y polos: medí el pecho rodeando la parte más ancha del torso. El largo se mide desde el hombro hasta el bajo.',
+    rows: [
+      { talla:'XS', pecho:'80-84', cintura:'66-70', cadera:'86-90', largo:'66' },
+      { talla:'S',  pecho:'84-88', cintura:'70-74', cadera:'90-94', largo:'68' },
+      { talla:'M',  pecho:'88-92', cintura:'74-78', cadera:'94-98', largo:'70' },
+      { talla:'L',  pecho:'92-97', cintura:'78-83', cadera:'98-103',largo:'72' },
+      { talla:'XL', pecho:'97-102',cintura:'83-88', cadera:'103-108',largo:'74' },
+      { talla:'XXL',pecho:'102-108',cintura:'88-94',cadera:'108-114',largo:'76' },
+    ]
+  },
+  abrigos: {
+    hint: 'Para canguros, camperas y parkas: tomá la medida del pecho y sumá 2-3 cm para mayor comodidad. El largo se mide desde el hombro hasta el bajo de la prenda.',
+    rows: [
+      { talla:'XS', pecho:'84-88', cintura:'70-74', cadera:'90-94', largo:'64' },
+      { talla:'S',  pecho:'88-92', cintura:'74-78', cadera:'94-98', largo:'66' },
+      { talla:'M',  pecho:'92-96', cintura:'78-82', cadera:'98-102',largo:'68' },
+      { talla:'L',  pecho:'96-101',cintura:'82-87', cadera:'102-107',largo:'70' },
+      { talla:'XL', pecho:'101-106',cintura:'87-92',cadera:'107-112',largo:'72' },
+      { talla:'XXL',pecho:'106-112',cintura:'92-98',cadera:'112-118',largo:'74' },
+    ]
+  }
+};
+
+function openSizeModal(productName, cat) {
+  const data = SIZE_DATA[cat] || SIZE_DATA['indumentaria'];
+  document.getElementById('size-modal-title').textContent = 'Guía de talles — ' + productName;
+  document.getElementById('size-hint').textContent = data.hint;
+  const tbody = document.getElementById('size-table-body');
+  tbody.innerHTML = data.rows.map(r =>
+    '<tr><td>' + r.talla + '</td><td>' + r.pecho + '</td><td>' + r.cintura + '</td><td>' + r.cadera + '</td><td>' + r.largo + '</td></tr>'
+  ).join('');
+  document.getElementById('size-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSizeModal() {
+  document.getElementById('size-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeSizeModal();
+});
+
+</script>
 <script type="text/javascript">
   (function(){
     emailjs.init("2yMyJP3DeUV0Zcewo");
@@ -394,6 +472,29 @@
   </div>
 </section>
 
+
+<!-- MODAL TABLA DE TALLES -->
+<div class="size-modal-overlay" id="size-modal" onclick="if(event.target===this)closeSizeModal()">
+  <div class="size-modal-box">
+    <button class="size-modal-close" onclick="closeSizeModal()">&#x2715;</button>
+    <h3 class="size-modal-title" id="size-modal-title">Guía de talles</h3>
+    <p class="size-modal-sub">Todas las medidas están en centímetros (cm). Medite sin ropa ajustada.</p>
+    <table class="size-table">
+      <thead>
+        <tr>
+          <th>Talla</th>
+          <th>Pecho</th>
+          <th>Cintura</th>
+          <th>Cadera</th>
+          <th>Largo</th>
+        </tr>
+      </thead>
+      <tbody id="size-table-body"></tbody>
+    </table>
+    <p class="size-hint" id="size-hint"></p>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -517,6 +618,7 @@ function renderProducts(filter) {
       <div class="product-info">
         <p class="product-name">${p.name}</p>
         <p class="product-desc">${p.desc}</p>
+        ${['indumentaria','remeras','abrigos'].includes(p.cat) ? `<button class="size-btn" onclick="event.stopPropagation();openSizeModal('${p.name}','${p.cat}')">📏 Talles</button>` : ''}
         <div class="product-footer">
           <span class="product-price">$${Number(p.price).toLocaleString()}</span>
           <button class="add-btn" onclick="addToCart(${p.id})">+ Agregar</button>
