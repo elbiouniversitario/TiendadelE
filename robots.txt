@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://elbiouniversitario.github.io/TiendadelE/sitemap.xml
