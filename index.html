@@ -1640,7 +1640,8 @@ function loadMatchesFromSheets() {
 function saveMatchToSheets(match) {
   fetch(SCRIPT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ type: 'match', ...match })
   }).catch(() => {});
 }
@@ -1648,6 +1649,8 @@ function saveMatchToSheets(match) {
 function deleteMatchFromSheets(id) {
   fetch(SCRIPT_URL, {
     method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ type: 'delete_match', id: id })
   }).catch(() => {});
 }
