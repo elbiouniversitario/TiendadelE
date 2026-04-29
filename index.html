@@ -768,6 +768,57 @@ document.addEventListener('keydown', function(e) {
         <button class="save-btn" onclick="addProduct()">+ Guardar producto</button>
       </div>
       <div class="admin-card">
+        <h3>⚽ Próximos partidos</h3>
+        <div class="product-form-grid" style="margin-bottom:1rem;">
+          <div class="form-group">
+            <label class="form-label">DÍA</label>
+            <input class="form-input" id="m-dia" placeholder="Ej: 15" maxlength="2" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">MES</label>
+            <select class="form-select" id="m-mes">
+              <option value="Enero">Enero</option>
+              <option value="Febrero">Febrero</option>
+              <option value="Marzo">Marzo</option>
+              <option value="Abril">Abril</option>
+              <option value="Mayo" selected>Mayo</option>
+              <option value="Junio">Junio</option>
+              <option value="Julio">Julio</option>
+              <option value="Agosto">Agosto</option>
+              <option value="Setiembre">Setiembre</option>
+              <option value="Octubre">Octubre</option>
+              <option value="Noviembre">Noviembre</option>
+              <option value="Diciembre">Diciembre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">EQUIPO ELBIO</label>
+            <input class="form-input" id="m-equipo" placeholder="Ej: Mayor, Sub 20, Reserva..." />
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">RIVAL</label>
+            <input class="form-input" id="m-visitante" placeholder="Ej: Old Boys" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">HORA</label>
+            <input class="form-input" id="m-hora" placeholder="Ej: 15:30 hs" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">CONDICIÓN</label>
+            <select class="form-select" id="m-condicion">
+              <option value="local">Local</option>
+              <option value="visit">Visitante</option>
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">CANCHA</label>
+            <input class="form-input" id="m-cancha" placeholder="Ej: Cancha del Elbio" />
+          </div>
+        </div>
+        <button class="save-btn" onclick="addMatchFromForm()">+ Agregar partido</button>
+        <div id="admin-matches-list" style="margin-top:1rem;"></div>
+      </div>
+      <div class="admin-card">
         <h3>Pedidos recibidos</h3>
         <table class="orders-table">
           <thead>
@@ -1332,6 +1383,7 @@ function checkAdminPass() {
     document.getElementById('admin-login-area').style.display = 'none';
     document.getElementById('admin-panel-area').style.display = 'block';
     renderAdminOrders();
+    renderAdminMatches();
     err.style.display = 'none';
   } else {
     err.style.display = 'block';
@@ -1533,38 +1585,126 @@ function secretClick() {
   }
 }
 
-// ── PRÓXIMOS PARTIDOS (data) ──────────────────────────────────────────────────
-const MATCHES = [
-  { day:'15', month:'Mayo', home:'Elbio Universitario', away:'Old Boys', time:'15:30 hs', venue:'Cancha del Elbio', tag:'local' },
-  { day:'22', month:'Mayo', home:'Trouville', away:'Elbio Universitario', time:'16:00 hs', venue:'Estadio Trouville', tag:'visit' },
-  { day:'29', month:'Mayo', home:'Elbio Universitario', away:'Carrasco Polo', time:'15:30 hs', venue:'Cancha del Elbio', tag:'local' },
-  { day:'05', month:'Junio', home:'Champagnat', away:'Elbio Universitario', time:'15:00 hs', venue:'Champagnat Club', tag:'visit' },
-  { day:'12', month:'Junio', home:'Elbio Universitario', away:'Los Cuervos', time:'15:30 hs', venue:'Cancha del Elbio', tag:'local' },
-];
+// ── PRÓXIMOS PARTIDOS — sincronizado con Google Sheets ────────────────────────
+let matches = [];
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+               'Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
 
 function renderMatches() {
   const el = document.getElementById('matches-list');
   if (!el) return;
-  el.innerHTML = MATCHES.map(m => {
-    const isLocal = m.tag === 'local';
+  if (matches.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:1.5rem 0;text-align:center;">No hay partidos cargados aún.</p>';
+    return;
+  }
+  el.innerHTML = matches.map(m => {
+    const isLocal = m.condicion === 'local';
+    const elbioPart = m.equipo ? `${m.equipo}` : 'Elbio Universitario';
+    const home = isLocal ? elbioPart : m.visitante;
+    const away = isLocal ? m.visitante : elbioPart;
     return `
       <div class="match-row">
         <div class="match-date">
-          <div class="match-day">${m.day}</div>
-          <div class="match-month">${m.month}</div>
+          <div class="match-day">${m.dia}</div>
+          <div class="match-month">${m.mes}</div>
         </div>
         <div class="match-teams">
-          <span class="match-team ${isLocal?'home':''}">${m.home}</span>
+          <span class="match-team ${isLocal?'home':''}">${home}</span>
           <span class="match-vs">VS</span>
-          <span class="match-team ${!isLocal?'home':''}">${m.away}</span>
+          <span class="match-team ${!isLocal?'home':''}">${away}</span>
         </div>
         <div class="match-meta">
-          <strong>${m.time}</strong>
-          ${m.venue}
+          <strong>${m.hora}</strong>
+          ${m.cancha}
         </div>
-        <span class="match-tag ${m.tag}">${isLocal?'LOCAL':'VISITANTE'}</span>
+        <span class="match-tag ${m.condicion}">${isLocal?'LOCAL':'VISITANTE'}</span>
       </div>`;
   }).join('');
+}
+
+function loadMatchesFromSheets() {
+  fetch(SCRIPT_URL + '?type=matches')
+    .then(r => r.json())
+    .then(data => {
+      if (Array.isArray(data)) matches = data;
+      renderMatches();
+      renderAdminMatches();
+    })
+    .catch(() => {
+      renderMatches();
+      renderAdminMatches();
+    });
+}
+
+function saveMatchToSheets(match) {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ type: 'match', ...match })
+  }).catch(() => {});
+}
+
+function deleteMatchFromSheets(id) {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ type: 'delete_match', id: id })
+  }).catch(() => {});
+}
+
+// ── ADMIN: gestión de partidos ────────────────────────────────────────────────
+function addMatchFromForm() {
+  const dia       = document.getElementById('m-dia').value.trim();
+  const mes       = document.getElementById('m-mes').value;
+  const equipo    = document.getElementById('m-equipo').value;
+  const visitante = document.getElementById('m-visitante').value.trim();
+  const hora      = document.getElementById('m-hora').value.trim();
+  const cancha    = document.getElementById('m-cancha').value.trim();
+  const condicion = document.getElementById('m-condicion').value;
+
+  if (!dia || !visitante || !hora || !cancha) {
+    alert('Completá todos los campos del partido.'); return;
+  }
+  const match = {
+    id: Date.now().toString(),
+    dia, mes, equipo, local: equipo, visitante, hora, cancha, condicion
+  };
+  matches.push(match);
+  saveMatchToSheets(match);
+  renderMatches();
+  renderAdminMatches();
+  // limpiar form
+  document.getElementById('m-dia').value = '';
+  document.getElementById('m-equipo').value = '';
+  document.getElementById('m-visitante').value = '';
+  document.getElementById('m-hora').value = '';
+  document.getElementById('m-cancha').value = '';
+}
+
+function deleteAdminMatch(id) {
+  matches = matches.filter(m => String(m.id) !== String(id));
+  deleteMatchFromSheets(id);
+  renderMatches();
+  renderAdminMatches();
+}
+
+function renderAdminMatches() {
+  const el = document.getElementById('admin-matches-list');
+  if (!el) return;
+  if (matches.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;">Ningún partido cargado.</p>';
+    return;
+  }
+  el.innerHTML = matches.map(m => {
+    const elbioPart = m.equipo ? `${m.equipo}` : 'Elbio Universitario';
+    return `
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border);font-size:13px;">
+      <span style="font-weight:700;min-width:32px;">${m.dia}</span>
+      <span style="color:var(--muted);min-width:64px;">${m.mes}</span>
+      <span style="background:var(--navy);color:#fff;border-radius:4px;padding:1px 6px;font-size:11px;">${m.equipo||'Mayor'}</span>
+      <span style="flex:1;">${m.condicion==='local'?elbioPart+' vs':('vs '+elbioPart)} <strong>${m.visitante}</strong></span>
+      <span style="color:var(--muted);">${m.hora}</span>
+      <button onclick="deleteAdminMatch('${m.id}')" style="background:#A32D2D;color:#fff;border:none;border-radius:6px;padding:.25rem .6rem;font-size:11px;cursor:pointer;">✕</button>
+    </div>`}).join('');
 }
 
 // ── TWEAKS PANEL (variantes de cards) ─────────────────────────────────────────
@@ -1594,6 +1734,6 @@ function initTweaks() {
 // ── INICIO ────────────────────────────────────────────────────────────────────
 updateCartCount();
 loadProductsFromSheets(); // Esto cargará products Y luego cart
-renderMatches();
+loadMatchesFromSheets();  // Carga partidos desde Sheets
 initTweaks();
 </script>
