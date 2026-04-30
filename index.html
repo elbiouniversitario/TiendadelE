@@ -1054,7 +1054,7 @@ let currentFilter = 'all';
 let adminAuthenticated = false;
 let photoBase64 = null;
 
-// ── CARRITO PERSISTENTE (localStorage) ───────────────────────────────────────
+// ── CARRITO PERSISTENTE (sessionStorage) ────────────────────────────────────
 function saveCart() {
   try {
     // Guardar solo ID y cantidad, no todo el objeto
@@ -1063,29 +1063,37 @@ function saveCart() {
       qty: item.qty
     }));
     const cartData = JSON.stringify(cartLite);
-    localStorage.setItem('elef_cart', cartData);
+    sessionStorage.setItem('elef_cart', cartData);
   } catch(e) {
     console.error('Error al guardar carrito:', e);
   }
 }
 function loadCart() {
   try {
-    const saved = localStorage.getItem('elef_cart');
+    const saved = sessionStorage.getItem('elef_cart');
     const cartLite = saved ? JSON.parse(saved) : [];
-    
+
     // Reconstruir el carrito completo con los datos de products
+    // El ID puede ser base ("123") o con talle ("123-M")
     const fullCart = cartLite.map(item => {
-      const product = products.find(p => String(p.id) === String(item.id));
+      const idStr = String(item.id);
+      const hasTalle = idStr.includes('-');
+      const baseId = hasTalle ? idStr.split('-')[0] : idStr;
+      const size = hasTalle ? idStr.split('-')[1] : null;
+      const product = products.find(p => String(p.id) === baseId);
       if (product) {
+        if (size) {
+          return {...product, id: idStr, name: product.name + ' (talle ' + size + ')', qty: item.qty, size};
+        }
         return {...product, qty: item.qty};
       }
       return null;
     }).filter(Boolean);
-    
+
     return fullCart;
-  } catch(e) { 
+  } catch(e) {
     console.error('Error al cargar carrito:', e);
-    return []; 
+    return [];
   }
 }
 let cart = []; // Se cargará después de tener los productos
@@ -1524,6 +1532,7 @@ function showSection(id) {
   if (id==='cart') renderCart();
   if (id==='admin') renderAdminOrders();
   window.scrollTo(0,0);
+  try { sessionStorage.setItem('elef_section', id); } catch(e) {}
 }
 
 function showToast(msg, type) {
@@ -1575,6 +1584,7 @@ function renderMiniCart() {
 let secretClicks = 0;
 let secretTimer = null;
 function secretClick() {
+  showSection('catalog');
   secretClicks++;
   clearTimeout(secretTimer);
   if (secretClicks >= 5) {
@@ -1740,4 +1750,11 @@ updateCartCount();
 loadProductsFromSheets(); // Esto cargará products Y luego cart
 loadMatchesFromSheets();  // Carga partidos desde Sheets
 initTweaks();
+// Restaurar sección activa al refrescar
+(function() {
+  try {
+    const sec = sessionStorage.getItem('elef_section');
+    if (sec && document.getElementById('sec-' + sec)) showSection(sec);
+  } catch(e) {}
+})();
 </script>
