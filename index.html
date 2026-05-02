@@ -1968,14 +1968,27 @@ const TOGGLE_SECTIONS = [
 let sectionVisibility = {};
 
 function loadVisibility() {
+  // 1. Aplicar localStorage inmediatamente (evita el flash)
+  try {
+    const cached = localStorage.getItem('elef_visibility');
+    if (cached) {
+      sectionVisibility = JSON.parse(cached);
+      applyVisibility();
+    }
+  } catch(e) {}
+
+  // 2. Fetch a Sheets en paralelo (fuente de verdad)
   fetch(SCRIPT_URL + '?type=visibility')
     .then(r => r.json())
     .then(data => {
-      if (data && typeof data === 'object') sectionVisibility = data;
-      applyVisibility();
-      renderVisibilityToggles();
+      if (data && typeof data === 'object') {
+        sectionVisibility = data;
+        try { localStorage.setItem('elef_visibility', JSON.stringify(data)); } catch(e) {}
+        applyVisibility();
+        renderVisibilityToggles();
+      }
     })
-    .catch(() => { applyVisibility(); renderVisibilityToggles(); });
+    .catch(() => { renderVisibilityToggles(); });
 }
 
 function applyVisibility() {
@@ -2028,6 +2041,7 @@ function toggleSection(id) {
 function saveVisibility() {
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
     body: JSON.stringify({ type:'visibility', data: sectionVisibility }) }).catch(()=>{});
+  try { localStorage.setItem('elef_visibility', JSON.stringify(sectionVisibility)); } catch(e) {}
   applyVisibility();
   showToast('Visibilidad guardada ✓', 'success');
 }
