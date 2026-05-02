@@ -820,6 +820,69 @@ document.addEventListener('keydown', function(e) {
         <div id="admin-matches-list" style="margin-top:1rem;"></div>
       </div>
       <div class="admin-card">
+        <h3>🎁 Beneficios para socios</h3>
+        <div class="product-form-grid" style="margin-bottom:1rem;">
+          <div class="form-group full-width">
+            <label class="form-label">NOMBRE DEL LOCAL</label>
+            <input class="form-input" id="b-nombre" placeholder="Ej: Pizzería Del Puerto" />
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">DESCRIPCIÓN / BENEFICIO</label>
+            <input class="form-input" id="b-desc" placeholder="Ej: 15% off en todas las compras" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">INSTAGRAM (sin @)</label>
+            <input class="form-input" id="b-instagram" placeholder="Ej: pizzeriadelpuerto" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">DIRECCIÓN</label>
+            <input class="form-input" id="b-direccion" placeholder="Ej: Av. Italia 1234" />
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">FOTO DEL LOCAL</label>
+            <div id="b-photo-drop" onclick="document.getElementById('b-photo-input').click()" style="border:1.5px dashed var(--border);border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;background:var(--cream);">
+              <div id="b-photo-preview" style="display:none;margin-bottom:0.5rem;"><img id="b-photo-preview-img" style="max-height:120px;max-width:100%;border-radius:8px;object-fit:cover;" /></div>
+              <div id="b-photo-placeholder"><p style="font-size:22px;margin-bottom:4px;">📷</p><p style="font-size:12px;color:var(--muted);">Tocá para elegir foto</p></div>
+            </div>
+            <input type="file" id="b-photo-input" accept="image/*" style="display:none" onchange="handleBeneficioPhoto(this)" />
+            <button type="button" id="b-photo-remove" onclick="removeBeneficioPhoto()" style="display:none;margin-top:4px;background:none;border:none;font-size:11px;color:#A32D2D;cursor:pointer;font-family:inherit;">✕ Quitar foto</button>
+          </div>
+        </div>
+        <button class="save-btn" onclick="addBeneficio()">+ Agregar beneficio</button>
+        <div id="admin-beneficios-list" style="margin-top:1rem;"></div>
+      </div>
+
+      <div class="admin-card">
+        <h3>🤝 Colaboradores</h3>
+        <div class="product-form-grid" style="margin-bottom:1rem;">
+          <div class="form-group full-width">
+            <label class="form-label">NOMBRE</label>
+            <input class="form-input" id="c-nombre" placeholder="Ej: Supermercado Tienda Inglesa" />
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">LOGO</label>
+            <div id="c-photo-drop" onclick="document.getElementById('c-photo-input').click()" style="border:1.5px dashed var(--border);border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;background:var(--cream);">
+              <div id="c-photo-preview" style="display:none;margin-bottom:0.5rem;"><img id="c-photo-preview-img" style="max-height:100px;max-width:100%;border-radius:8px;object-fit:contain;" /></div>
+              <div id="c-photo-placeholder"><p style="font-size:22px;margin-bottom:4px;">🖼️</p><p style="font-size:12px;color:var(--muted);">Tocá para elegir logo</p></div>
+            </div>
+            <input type="file" id="c-photo-input" accept="image/*" style="display:none" onchange="handleColabPhoto(this)" />
+            <button type="button" id="c-photo-remove" onclick="removeColabPhoto()" style="display:none;margin-top:4px;background:none;border:none;font-size:11px;color:#A32D2D;cursor:pointer;font-family:inherit;">✕ Quitar foto</button>
+          </div>
+        </div>
+        <button class="save-btn" onclick="addColaborador()">+ Agregar colaborador</button>
+        <div id="admin-colaboradores-list" style="margin-top:1rem;"></div>
+      </div>
+
+      <div class="admin-card">
+        <h3>👁 Visibilidad de secciones</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Activá o desactivá secciones del sitio. Las secciones desactivadas no aparecen en el menú ni son accesibles.</p>
+        <div id="visibility-toggles">
+          <!-- generado por JS -->
+        </div>
+        <button class="save-btn" onclick="saveVisibility()" style="margin-top:1rem;">Guardar cambios</button>
+      </div>
+
+      <div class="admin-card">
         <h3>Pedidos recibidos</h3>
         <table class="orders-table">
           <thead>
@@ -899,19 +962,8 @@ document.addEventListener('keydown', function(e) {
       <h2 class="page-title">Nuestros colaboradores</h2>
       <p class="page-sub">Gracias a todos los que hacen posible que el Elbio siga compitiendo.</p>
     </div>
-    <p class="sponsor-tier">Sponsors principales</p>
-    <div class="sponsors-grid">
-      <div class="sponsor-tile"><small>Sponsor 01</small>Logo</div>
-      <div class="sponsor-tile"><small>Sponsor 02</small>Logo</div>
-      <div class="sponsor-tile"><small>Sponsor 03</small>Logo</div>
-    </div>
-    <p class="sponsor-tier">Colaboradores</p>
-    <div class="sponsors-grid">
-      <div class="sponsor-tile"><small>Sponsor 04</small>Logo</div>
-      <div class="sponsor-tile"><small>Sponsor 05</small>Logo</div>
-      <div class="sponsor-tile"><small>Sponsor 06</small>Logo</div>
-      <div class="sponsor-tile"><small>Sponsor 07</small>Logo</div>
-      <div class="sponsor-tile"><small>Sponsor 08</small>Logo</div>
+    <div id="colaboradores-list" class="sponsors-grid">
+      <!-- generado por JS -->
     </div>
     <div class="sponsor-cta">
       <h3>¿Querés sumarte?</h3>
@@ -952,41 +1004,8 @@ document.addEventListener('keydown', function(e) {
 
     <!-- Beneficios: tarjetas de comercios -->
     <h3 style="font-family:Georgia,serif;font-size:1.15rem;color:var(--navy);margin-bottom:1.25rem;">Beneficios exclusivos para socios</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem;margin-bottom:2.5rem;">
-
-      <!-- Tarjeta comercio 1 — duplicá este bloque para agregar más -->
-      <div style="background:white;border:0.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
-        <div style="height:110px;background:#f4f4f6;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🍽️</div>
-        <div style="padding:1.1rem 1.25rem 1.25rem;">
-          <div style="font-weight:600;font-size:1rem;color:var(--navy);margin-bottom:0.2rem;">Nombre del local</div>
-          <div style="font-size:1.4rem;font-weight:700;color:var(--gold);margin-bottom:0.4rem;">10% off</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:0.5rem;">Breve descripción del beneficio o condición.</div>
-          <div style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:4px;">📍 Ubicación del local</div>
-        </div>
-      </div>
-
-      <!-- Tarjeta comercio 2 -->
-      <div style="background:white;border:0.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
-        <div style="height:110px;background:#f4f4f6;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🍕</div>
-        <div style="padding:1.1rem 1.25rem 1.25rem;">
-          <div style="font-weight:600;font-size:1rem;color:var(--navy);margin-bottom:0.2rem;">Nombre del local</div>
-          <div style="font-size:1.4rem;font-weight:700;color:var(--gold);margin-bottom:0.4rem;">15% off</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:0.5rem;">Breve descripción del beneficio o condición.</div>
-          <div style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:4px;">📍 Ubicación del local</div>
-        </div>
-      </div>
-
-      <!-- Tarjeta comercio 3 -->
-      <div style="background:white;border:0.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
-        <div style="height:110px;background:#f4f4f6;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">☕</div>
-        <div style="padding:1.1rem 1.25rem 1.25rem;">
-          <div style="font-weight:600;font-size:1rem;color:var(--navy);margin-bottom:0.2rem;">Nombre del local</div>
-          <div style="font-size:1.4rem;font-weight:700;color:var(--gold);margin-bottom:0.4rem;">20% off</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:0.5rem;">Breve descripción del beneficio o condición.</div>
-          <div style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:4px;">📍 Ubicación del local</div>
-        </div>
-      </div>
-
+    <div id="beneficios-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem;margin-bottom:2.5rem;">
+      <!-- generado por JS -->
     </div>
 
     <!-- CTA -->
@@ -1488,6 +1507,9 @@ function checkAdminPass() {
     document.getElementById('admin-panel-area').style.display = 'block';
     renderAdminOrders();
     renderAdminMatches();
+    renderAdminBeneficios();
+    renderAdminColaboradores();
+    renderVisibilityToggles();
     err.style.display = 'none';
   } else {
     err.style.display = 'block';
@@ -1691,7 +1713,250 @@ function secretClick() {
   }
 }
 
-// ── PRÓXIMOS PARTIDOS — sincronizado con Google Sheets ────────────────────────
+// ── BENEFICIOS ────────────────────────────────────────────────────────────────
+let beneficios = [];
+let beneficioPhotoBase64 = null;
+
+function handleBeneficioPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    beneficioPhotoBase64 = e.target.result;
+    document.getElementById('b-photo-preview-img').src = beneficioPhotoBase64;
+    document.getElementById('b-photo-preview').style.display = 'block';
+    document.getElementById('b-photo-placeholder').style.display = 'none';
+    document.getElementById('b-photo-remove').style.display = 'inline-block';
+    document.getElementById('b-photo-drop').style.borderColor = 'var(--gold)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeBeneficioPhoto() {
+  beneficioPhotoBase64 = null;
+  document.getElementById('b-photo-input').value = '';
+  document.getElementById('b-photo-preview').style.display = 'none';
+  document.getElementById('b-photo-placeholder').style.display = 'block';
+  document.getElementById('b-photo-remove').style.display = 'none';
+  document.getElementById('b-photo-drop').style.borderColor = 'var(--border)';
+}
+
+function addBeneficio() {
+  const nombre    = document.getElementById('b-nombre').value.trim();
+  const desc      = document.getElementById('b-desc').value.trim();
+  const instagram = document.getElementById('b-instagram').value.trim().replace('@','');
+  const direccion = document.getElementById('b-direccion').value.trim();
+  if (!nombre || !desc) { showToast('Completá nombre y descripción'); return; }
+  const b = { id: Date.now().toString(), nombre, desc, instagram, direccion, foto: beneficioPhotoBase64 || '' };
+  beneficios.push(b);
+  saveBeneficioToSheets(b);
+  renderBeneficios();
+  renderAdminBeneficios();
+  document.getElementById('b-nombre').value = '';
+  document.getElementById('b-desc').value = '';
+  document.getElementById('b-instagram').value = '';
+  document.getElementById('b-direccion').value = '';
+  removeBeneficioPhoto();
+}
+
+function deleteBeneficio(id) {
+  beneficios = beneficios.filter(b => String(b.id) !== String(id));
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({ type:'delete_beneficio', id }) }).catch(()=>{});
+  renderBeneficios();
+  renderAdminBeneficios();
+}
+
+function saveBeneficioToSheets(b) {
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({ type:'beneficio', ...b }) }).catch(()=>{});
+}
+
+function loadBeneficiosFromSheets() {
+  fetch(SCRIPT_URL + '?type=beneficios')
+    .then(r => r.json())
+    .then(data => { if (Array.isArray(data)) beneficios = data; renderBeneficios(); renderAdminBeneficios(); })
+    .catch(() => { renderBeneficios(); renderAdminBeneficios(); });
+}
+
+function renderBeneficios() {
+  const el = document.getElementById('beneficios-list');
+  if (!el) return;
+  if (beneficios.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;">No hay beneficios cargados aún.</p>'; return;
+  }
+  el.innerHTML = beneficios.map(b => `
+    <div style="background:white;border:0.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+      <div style="height:110px;background:#f4f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        ${b.foto ? `<img src="${b.foto}" style="width:100%;height:100%;object-fit:cover;" />` : `<span style="font-size:2.5rem;">🏪</span>`}
+      </div>
+      <div style="padding:1.1rem 1.25rem 1.25rem;">
+        <div style="font-weight:600;font-size:1rem;color:var(--navy);margin-bottom:0.2rem;">${b.nombre}</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:0.4rem;">${b.desc}</div>
+        ${b.direccion ? `<div style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:4px;margin-bottom:4px;">📍 ${b.direccion}</div>` : ''}
+        ${b.instagram ? `<a href="https://instagram.com/${b.instagram}" target="_blank" style="font-size:11px;color:var(--navy);text-decoration:none;">📷 @${b.instagram}</a>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function renderAdminBeneficios() {
+  const el = document.getElementById('admin-beneficios-list');
+  if (!el) return;
+  if (beneficios.length === 0) { el.innerHTML = '<p style="color:var(--muted);font-size:12px;">Ningún beneficio cargado.</p>'; return; }
+  el.innerHTML = beneficios.map(b => `
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border);font-size:13px;">
+      ${b.foto ? `<img src="${b.foto}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;" />` : `<span style="font-size:1.5rem;">🏪</span>`}
+      <span style="flex:1;"><strong>${b.nombre}</strong><br><span style="color:var(--muted);font-size:11px;">${b.desc}</span></span>
+      <button onclick="deleteBeneficio('${b.id}')" style="background:#A32D2D;color:#fff;border:none;border-radius:6px;padding:.25rem .6rem;font-size:11px;cursor:pointer;">✕</button>
+    </div>`).join('');
+}
+
+// ── COLABORADORES ─────────────────────────────────────────────────────────────
+let colaboradores = [];
+let colabPhotoBase64 = null;
+
+function handleColabPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    colabPhotoBase64 = e.target.result;
+    document.getElementById('c-photo-preview-img').src = colabPhotoBase64;
+    document.getElementById('c-photo-preview').style.display = 'block';
+    document.getElementById('c-photo-placeholder').style.display = 'none';
+    document.getElementById('c-photo-remove').style.display = 'inline-block';
+    document.getElementById('c-photo-drop').style.borderColor = 'var(--gold)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeColabPhoto() {
+  colabPhotoBase64 = null;
+  document.getElementById('c-photo-input').value = '';
+  document.getElementById('c-photo-preview').style.display = 'none';
+  document.getElementById('c-photo-placeholder').style.display = 'block';
+  document.getElementById('c-photo-remove').style.display = 'none';
+  document.getElementById('c-photo-drop').style.borderColor = 'var(--border)';
+}
+
+function addColaborador() {
+  const nombre = document.getElementById('c-nombre').value.trim();
+  if (!nombre) { showToast('Ingresá el nombre del colaborador'); return; }
+  const c = { id: Date.now().toString(), nombre, foto: colabPhotoBase64 || '' };
+  colaboradores.push(c);
+  saveColabToSheets(c);
+  renderColaboradores();
+  renderAdminColaboradores();
+  document.getElementById('c-nombre').value = '';
+  removeColabPhoto();
+}
+
+function deleteColaborador(id) {
+  colaboradores = colaboradores.filter(c => String(c.id) !== String(id));
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({ type:'delete_colaborador', id }) }).catch(()=>{});
+  renderColaboradores();
+  renderAdminColaboradores();
+}
+
+function saveColabToSheets(c) {
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({ type:'colaborador', ...c }) }).catch(()=>{});
+}
+
+function loadColabsFromSheets() {
+  fetch(SCRIPT_URL + '?type=colaboradores')
+    .then(r => r.json())
+    .then(data => { if (Array.isArray(data)) colaboradores = data; renderColaboradores(); renderAdminColaboradores(); })
+    .catch(() => { renderColaboradores(); renderAdminColaboradores(); });
+}
+
+function renderColaboradores() {
+  const el = document.getElementById('colaboradores-list');
+  if (!el) return;
+  if (colaboradores.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:1rem 0;">No hay colaboradores cargados aún.</p>'; return;
+  }
+  el.innerHTML = colaboradores.map(c => `
+    <div class="sponsor-tile" style="flex-direction:column;gap:8px;padding:.75rem;">
+      ${c.foto ? `<img src="${c.foto}" style="max-height:60px;max-width:80%;object-fit:contain;" />` : `<span style="font-size:1.8rem;">🤝</span>`}
+      <small style="position:static;font-size:10px;color:var(--muted);letter-spacing:0.08em;">${c.nombre}</small>
+    </div>`).join('');
+}
+
+function renderAdminColaboradores() {
+  const el = document.getElementById('admin-colaboradores-list');
+  if (!el) return;
+  if (colaboradores.length === 0) { el.innerHTML = '<p style="color:var(--muted);font-size:12px;">Ningún colaborador cargado.</p>'; return; }
+  el.innerHTML = colaboradores.map(c => `
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border);font-size:13px;">
+      ${c.foto ? `<img src="${c.foto}" style="width:40px;height:36px;border-radius:6px;object-fit:contain;background:#f4f4f6;" />` : `<span style="font-size:1.5rem;">🤝</span>`}
+      <span style="flex:1;font-weight:600;">${c.nombre}</span>
+      <button onclick="deleteColaborador('${c.id}')" style="background:#A32D2D;color:#fff;border:none;border-radius:6px;padding:.25rem .6rem;font-size:11px;cursor:pointer;">✕</button>
+    </div>`).join('');
+}
+
+// ── VISIBILIDAD DE SECCIONES ──────────────────────────────────────────────────
+const TOGGLE_SECTIONS = [
+  { id:'club',      label:'El club' },
+  { id:'partidos',  label:'Próximos partidos' },
+  { id:'sponsors',  label:'Colaboradores' },
+  { id:'cuota',     label:'Cuota Social / Beneficios' },
+  { id:'contacto',  label:'Contacto' },
+];
+let sectionVisibility = {};
+
+function loadVisibility() {
+  fetch(SCRIPT_URL + '?type=visibility')
+    .then(r => r.json())
+    .then(data => {
+      if (data && typeof data === 'object') sectionVisibility = data;
+      applyVisibility();
+      renderVisibilityToggles();
+    })
+    .catch(() => { applyVisibility(); renderVisibilityToggles(); });
+}
+
+function applyVisibility() {
+  TOGGLE_SECTIONS.forEach(s => {
+    const hidden = sectionVisibility[s.id] === false;
+    // hide/show nav item
+    const navEl = document.getElementById('nav-' + s.id);
+    if (navEl) navEl.parentElement.style.display = hidden ? 'none' : '';
+  });
+}
+
+function renderVisibilityToggles() {
+  const el = document.getElementById('visibility-toggles');
+  if (!el) return;
+  el.innerHTML = TOGGLE_SECTIONS.map(s => {
+    const on = sectionVisibility[s.id] !== false;
+    return `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;font-weight:500;">${s.label}</span>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--muted);">
+        <span>${on ? 'Visible' : 'Oculta'}</span>
+        <div onclick="toggleSection('${s.id}')" style="width:42px;height:24px;border-radius:12px;background:${on?'var(--navy)':'#ccc'};position:relative;cursor:pointer;transition:background .2s;" id="toggle-${s.id}">
+          <div style="position:absolute;top:3px;left:${on?'21px':'3px'};width:18px;height:18px;border-radius:50%;background:white;transition:left .2s;"></div>
+        </div>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+function toggleSection(id) {
+  sectionVisibility[id] = sectionVisibility[id] === false ? true : false;
+  renderVisibilityToggles();
+}
+
+function saveVisibility() {
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({ type:'visibility', data: sectionVisibility }) }).catch(()=>{});
+  applyVisibility();
+  showToast('Visibilidad guardada ✓', 'success');
+}
+
+
 let matches = [];
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
@@ -1845,6 +2110,9 @@ function initTweaks() {
 updateCartCount();
 loadProductsFromSheets(); // Esto cargará products Y luego cart
 loadMatchesFromSheets();  // Carga partidos desde Sheets
+loadBeneficiosFromSheets();
+loadColabsFromSheets();
+loadVisibility();
 initTweaks();
 // Restaurar sección activa al refrescar
 (function() {
