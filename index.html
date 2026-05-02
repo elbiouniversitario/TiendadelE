@@ -1965,40 +1965,22 @@ const TOGGLE_SECTIONS = [
   { id:'cuota',     label:'Cuota Social / Beneficios' },
   { id:'contacto',  label:'Contacto' },
 ];
-let sectionVisibility = {};
+let sectionVisibility = {
+  club:      true,
+  partidos:  true,
+  sponsors:  false,
+  cuota:     true,
+  contacto:  true,
+};
 
 function loadVisibility() {
-  // 1. Aplicar localStorage inmediatamente (sin flash)
-  try {
-    const cached = localStorage.getItem('elef_visibility');
-    if (cached) sectionVisibility = JSON.parse(cached);
-  } catch(e) {}
   applyVisibility();
-
-  // 2. Fetch a Sheets (fuente de verdad para todos los dispositivos)
-  fetch(SCRIPT_URL + '?type=visibility')
-    .then(r => r.json())
-    .then(data => {
-      if (data && typeof data === 'object' && Object.keys(data).length > 0) {
-        sectionVisibility = data;
-        try { localStorage.setItem('elef_visibility', JSON.stringify(data)); } catch(e) {}
-        applyVisibility();
-      }
-      renderVisibilityToggles();
-    })
-    .catch(() => { renderVisibilityToggles(); });
+  renderVisibilityToggles();
 }
 
 function saveVisibility() {
-  // Asegurar que todas las secciones estén definidas
-  TOGGLE_SECTIONS.forEach(s => {
-    if (!(s.id in sectionVisibility)) sectionVisibility[s.id] = true;
-  });
-  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
-    body: JSON.stringify({ type:'visibility', data: sectionVisibility }) }).catch(()=>{});
-  try { localStorage.setItem('elef_visibility', JSON.stringify(sectionVisibility)); } catch(e) {}
   applyVisibility();
-  showToast('Visibilidad guardada ✓', 'success');
+  showToast('Visibilidad actualizada ✓', 'success');
 }
 
 function applyVisibility() {
