@@ -585,7 +585,8 @@ document.addEventListener('keydown', function(e) {
     <li><a onclick="navClick('catalog')" class="active" id="nav-catalog">Tienda</a></li>
     <li><a onclick="navClick('club')" id="nav-club">El club</a></li>
     <li><a onclick="navClick('partidos')" id="nav-partidos">Próximos partidos</a></li>
-    <li><a onclick="navClick('sponsors')" id="nav-sponsors">Sponsors</a></li>
+    <li><a onclick="navClick('sponsors')" id="nav-sponsors">Colaboradores</a></li>
+    <li><a onclick="navClick('cuota')" id="nav-cuota">Cuota Social</a></li>
     <li><a onclick="navClick('contacto')" id="nav-contacto">Contacto</a></li>
   </ul>
   <div class="nav-right">
@@ -884,7 +885,7 @@ document.addEventListener('keydown', function(e) {
   <div class="page-wrap">
     <div class="page-head">
       <p class="page-tag">Apoyo del club</p>
-      <h2 class="page-title">Nuestros sponsors</h2>
+      <h2 class="page-title">Nuestros colaboradores</h2>
       <p class="page-sub">Gracias a todos los que hacen posible que el Elbio siga compitiendo.</p>
     </div>
     <p class="sponsor-tier">Sponsors principales</p>
@@ -905,6 +906,83 @@ document.addEventListener('keydown', function(e) {
       <h3>¿Querés sumarte?</h3>
       <p>Si querés acompañar al club como sponsor o colaborador, escribinos. Tenemos planes para todos los presupuestos.</p>
       <a onclick="showSection('contacto')" style="cursor:pointer">Contactanos →</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- CUOTA SOCIAL -->
+<section id="sec-cuota">
+  <div class="page-wrap" style="max-width:900px">
+    <div class="page-head">
+      <p class="page-tag">Apoyá al club</p>
+      <h2 class="page-title">Cuota Social</h2>
+      <p class="page-sub">Una cuota chica que hace la diferencia. Apoyá al Elbio y accedé a beneficios exclusivos en comercios amigos del club.</p>
+    </div>
+
+    <!-- Descripción -->
+    <div style="background:white;border:0.5px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2.5rem;">
+      <h3 style="font-family:Georgia,serif;font-size:1.2rem;color:var(--navy);margin-bottom:0.75rem;">¿Qué es la Cuota Social?</h3>
+      <p style="color:var(--muted);line-height:1.7;margin:0;">
+        <!-- Escribí acá tu descripción de la cuota social -->
+        La Cuota Social es una forma de acompañar al club mes a mes. Con un aporte pequeño, ayudás a sostener las actividades del Elbio Universitario y a cambio accedés a descuentos y beneficios en una red de comercios que apoyan al club.
+      </p>
+    </div>
+
+    <!-- Botón pagar cuota -->
+    <div style="text-align:center;margin-bottom:2.5rem;">
+      <a href="https://www.soysocio.uy/clubs/elbio-fnz" target="_blank"
+         style="display:inline-block;background:var(--navy);color:white;text-decoration:none;font-family:inherit;font-size:15px;font-weight:600;padding:14px 36px;border-radius:10px;transition:background 0.2s;letter-spacing:0.02em;"
+         onmouseover="this.style.background='var(--gold)';this.style.color='var(--navy)'"
+         onmouseout="this.style.background='var(--navy)';this.style.color='white'">
+        Adherite a la Cuota Social →
+      </a>
+    </div>
+
+    <!-- Beneficios: tarjetas de comercios -->
+    <h3 style="font-family:Georgia,serif;font-size:1.15rem;color:var(--navy);margin-bottom:1.25rem;">Beneficios exclusivos para socios</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem;margin-bottom:2.5rem;">
+
+      <!-- Tarjeta comercio 1 — duplicá este bloque para agregar más -->
+      <div style="background:white;border:0.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+        <div style="height:110px;background:#f4f4f6;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🍽️</div>
+        <div style="padding:1.1rem 1.25rem 1.25rem;">
+          <div style="font-weight:600;font-size:1rem;color:var(--navy);margin-bottom:0.2rem;">Nombre del local</div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--gold);margin-bottom:0.4rem;">10% off</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:0.5rem;">Breve descripción del beneficio o condición.</div>
+          <div style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:4px;">📍 Ubicación del local</div>
+        </div>
+      </div>
+
+      <!-- Tarjeta comercio 2 -->
+      <div style="background:white;border:0.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+        <div style="height:110px;background:#f4f4f6;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🍕</div>
+        <div style="padding:1.1rem 1.25rem 1.25rem;">
+          <div style="font-weight:600;font-size:1rem;color:var(--navy);margin-bottom:0.2rem;">Nombre del local</div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--gold);margin-bottom:0.4rem;">15% off</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:0.5rem;">Breve descripción del beneficio o condición.</div>
+          <div style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:4px;">📍 Ubicación del local</div>
+        </div>
+      </div>
+
+      <!-- Tarjeta comercio 3 -->
+      <div style="background:white;border:0.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+        <div style="height:110px;background:#f4f4f6;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">☕</div>
+        <div style="padding:1.1rem 1.25rem 1.25rem;">
+          <div style="font-weight:600;font-size:1rem;color:var(--navy);margin-bottom:0.2rem;">Nombre del local</div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--gold);margin-bottom:0.4rem;">20% off</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:0.5rem;">Breve descripción del beneficio o condición.</div>
+          <div style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:4px;">📍 Ubicación del local</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CTA -->
+    <div class="sponsor-cta">
+      <h3>¿Querés ser socio?</h3>
+      <p>Escribinos y te explicamos cómo sumarte. ¡Apoyar al Elbio es fácil!</p>
+      <a href="https://wa.me/598099019892" target="_blank">Contactanos por WhatsApp →</a>
     </div>
   </div>
 </section>
@@ -936,11 +1014,17 @@ document.addEventListener('keydown', function(e) {
         <div class="contact-value">@elbiouniversitario</div>
         <div class="contact-extra">Resultados, fotos y novedades</div>
       </a>
-      <a class="contact-card">
+      <a class="contact-card" href="https://maps.app.goo.gl/5j1K4zrVc8dYZBuJ9" target="_blank">
         <div class="contact-icon">📍</div>
-        <div class="contact-label">Punto de encuentro</div>
-        <div class="contact-value">Cancha del Elbio</div>
-        <div class="contact-extra">Avenida del club, Montevideo</div>
+        <div class="contact-label">Campo Deportivo Elbio Fernández</div>
+        <div class="contact-value">Ruta 34, Canelones</div>
+        <div class="contact-extra">Ver en Google Maps →</div>
+      </a>
+      <a class="contact-card" href="https://maps.app.goo.gl/Y2wzQQ62oJ1WuKyp9" target="_blank">
+        <div class="contact-icon">🏟️</div>
+        <div class="contact-label">Polideportivo Elbio Fernández</div>
+        <div class="contact-value">Montevideo</div>
+        <div class="contact-extra">Ver en Google Maps →</div>
       </a>
     </div>
     <div class="social-row">
@@ -1025,7 +1109,8 @@ document.addEventListener('keydown', function(e) {
     <a onclick="showSection('catalog')">Catálogo</a>
     <a onclick="showSection('club')">El club</a>
     <a onclick="showSection('partidos')">Agenda</a>
-    <a onclick="showSection('sponsors')">Sponsors</a>
+    <a onclick="showSection('sponsors')">Colaboradores</a>
+    <a onclick="showSection('cuota')">Cuota Social</a>
     <a onclick="showSection('contacto')">Contacto</a>
   </div>
   <div style="margin-top:1.25rem;font-size:11px;opacity:.5">© 2026 Elbio Universitario</div>
