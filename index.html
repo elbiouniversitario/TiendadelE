@@ -1981,14 +1981,18 @@ function loadVisibility() {
   fetch(SCRIPT_URL + '?type=visibility')
     .then(r => r.json())
     .then(data => {
-      if (data && typeof data === 'object') {
+      // Solo actualizar si llegó un objeto con datos reales
+      if (data && typeof data === 'object' && Object.keys(data).length > 0) {
         sectionVisibility = data;
         try { localStorage.setItem('elef_visibility', JSON.stringify(data)); } catch(e) {}
         applyVisibility();
-        renderVisibilityToggles();
       }
+      renderVisibilityToggles();
     })
-    .catch(() => { renderVisibilityToggles(); });
+    .catch(() => {
+      // Fetch falló — mantener lo que ya tenemos del localStorage
+      renderVisibilityToggles();
+    });
 }
 
 function applyVisibility() {
