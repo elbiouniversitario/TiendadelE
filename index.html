@@ -1968,20 +1968,17 @@ const TOGGLE_SECTIONS = [
 let sectionVisibility = {};
 
 function loadVisibility() {
-  // 1. Aplicar localStorage inmediatamente (evita el flash)
+  // 1. Aplicar localStorage inmediatamente (sin flash)
   try {
     const cached = localStorage.getItem('elef_visibility');
-    if (cached) {
-      sectionVisibility = JSON.parse(cached);
-      applyVisibility();
-    }
+    if (cached) sectionVisibility = JSON.parse(cached);
   } catch(e) {}
+  applyVisibility();
 
-  // 2. Fetch a Sheets en paralelo (fuente de verdad)
+  // 2. Fetch a Sheets (fuente de verdad para todos los dispositivos)
   fetch(SCRIPT_URL + '?type=visibility')
     .then(r => r.json())
     .then(data => {
-      // Solo actualizar si llegó un objeto con datos reales
       if (data && typeof data === 'object' && Object.keys(data).length > 0) {
         sectionVisibility = data;
         try { localStorage.setItem('elef_visibility', JSON.stringify(data)); } catch(e) {}
@@ -1989,10 +1986,19 @@ function loadVisibility() {
       }
       renderVisibilityToggles();
     })
-    .catch(() => {
-      // Fetch falló — mantener lo que ya tenemos del localStorage
-      renderVisibilityToggles();
-    });
+    .catch(() => { renderVisibilityToggles(); });
+}
+
+function saveVisibility() {
+  // Asegurar que todas las secciones estén definidas
+  TOGGLE_SECTIONS.forEach(s => {
+    if (!(s.id in sectionVisibility)) sectionVisibility[s.id] = true;
+  });
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({ type:'visibility', data: sectionVisibility }) }).catch(()=>{});
+  try { localStorage.setItem('elef_visibility', JSON.stringify(sectionVisibility)); } catch(e) {}
+  applyVisibility();
+  showToast('Visibilidad guardada ✓', 'success');
 }
 
 function applyVisibility() {
@@ -2038,17 +2044,13 @@ function renderVisibilityToggles() {
 }
 
 function toggleSection(id) {
+  TOGGLE_SECTIONS.forEach(s => {
+    if (!(s.id in sectionVisibility)) sectionVisibility[s.id] = true;
+  });
   sectionVisibility[id] = sectionVisibility[id] === false ? true : false;
   renderVisibilityToggles();
 }
 
-function saveVisibility() {
-  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
-    body: JSON.stringify({ type:'visibility', data: sectionVisibility }) }).catch(()=>{});
-  try { localStorage.setItem('elef_visibility', JSON.stringify(sectionVisibility)); } catch(e) {}
-  applyVisibility();
-  showToast('Visibilidad guardada ✓', 'success');
-}
 
 
 let matches = [];
