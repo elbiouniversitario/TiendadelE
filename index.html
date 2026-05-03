@@ -562,9 +562,18 @@ function openSizeModalById(pid, preselectedSize) {
 
 let _activeSizeProduct = null;
 let _selectedSize = null;
+let _selectedExtras = {};
+
+function toggleExtra(i, price) {
+  const checked = document.getElementById('extra-check-' + i).checked;
+  if (checked) _selectedExtras[i] = price;
+  else delete _selectedExtras[i];
+  updateSizeAddBtn();
+}
 
 function openSizeModal(product, preselectedSize) {
   _activeSizeProduct = product;
+  _selectedExtras = {};
   const data = SIZE_DATA[product.cat] || SIZE_DATA['indumentaria'];
   document.getElementById('size-modal-title').textContent = product.name;
   document.getElementById('size-modal-price').textContent = '$' + Number(product.price).toLocaleString();
@@ -574,7 +583,27 @@ function openSizeModal(product, preselectedSize) {
     '<tr data-talla="' + r.talla + '"><td>' + r.talla + '</td><td>' + r.pecho + '</td><td>' + r.cintura + '</td><td>' + r.cadera + '</td><td>' + r.largo + '</td></tr>'
   ).join('');
 
-  // Pintar selector de talles disponibles
+  // Galería de fotos
+  const photos = product.photos && product.photos.length ? product.photos : (product.photo ? [product.photo] : []);
+  openGallery(photos);
+
+  // Extras opcionales
+  const extras = product.extras || [];
+  const extrasSection = document.getElementById('extras-section');
+  const extrasBoxes = document.getElementById('extras-checkboxes');
+  if (extras.length > 0) {
+    extrasSection.style.display = 'block';
+    extrasBoxes.innerHTML = extras.map((e, i) => `
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;">
+        <input type="checkbox" id="extra-check-${i}" onchange="toggleExtra(${i}, ${e.price})" style="width:16px;height:16px;accent-color:var(--navy);" />
+        <span style="flex:1;">${e.name}</span>
+        <span style="color:var(--gold);font-weight:600;">+$${Number(e.price).toLocaleString()}</span>
+      </label>`).join('');
+  } else {
+    extrasSection.style.display = 'none';
+  }
+
+  // Talles
   const sizes = (product.sizes && product.sizes.length ? product.sizes : ['S','M','L','XL']);
   const picker = document.getElementById('size-picker');
   picker.innerHTML = sizes.map(s =>
@@ -603,9 +632,11 @@ function selectSize(s) {
 function updateSizeAddBtn() {
   const btn = document.getElementById('size-modal-add');
   if (!btn) return;
+  const extrasTotal = Object.values(_selectedExtras).reduce((a,b) => a+b, 0);
+  const total = (_activeSizeProduct ? Number(_activeSizeProduct.price) : 0) + extrasTotal;
   if (_selectedSize) {
     btn.disabled = false;
-    btn.textContent = `Agregar talle ${_selectedSize} al carrito  +`;
+    btn.textContent = `Agregar talle ${_selectedSize} — $${total.toLocaleString()}  +`;
   } else {
     btn.disabled = true;
     btn.textContent = 'Elegí un talle';
@@ -615,16 +646,25 @@ function updateSizeAddBtn() {
 function addSelectedSizeToCart() {
   if (!_activeSizeProduct || !_selectedSize) return;
   const p = _activeSizeProduct;
-  const variantId = p.id + '-' + _selectedSize;
+  const extrasArr = p.extras || [];
+  const selectedExtraNames = Object.keys(_selectedExtras).map(i => extrasArr[i]?.name).filter(Boolean);
+  const extrasTotal = Object.values(_selectedExtras).reduce((a,b) => a+b, 0);
+  const extrasSuffix = selectedExtraNames.length ? ' + ' + selectedExtraNames.join(', ') : '';
+  const variantId = p.id + '-' + _selectedSize + (selectedExtraNames.length ? '-' + selectedExtraNames.join('-') : '');
   const ex = cart.find(x => String(x.id) === variantId);
   if (ex) {
     ex.qty++;
   } else {
-    cart.push({...p, id: variantId, name: p.name + ' (talle ' + _selectedSize + ')', qty: 1, size: _selectedSize});
+    cart.push({
+      ...p, id: variantId,
+      name: p.name + ' (talle ' + _selectedSize + ')' + extrasSuffix,
+      price: Number(p.price) + extrasTotal,
+      qty: 1, size: _selectedSize, extras: selectedExtraNames
+    });
   }
   saveCart();
   updateCartCount();
-  showToast(`✓ ${p.name} (talle ${_selectedSize}) agregado`, 'success');
+  showToast(`✓ ${p.name} (talle ${_selectedSize})${extrasSuffix} agregado`, 'success');
   closeSizeModal();
   showMiniCart();
 }
@@ -822,19 +862,44 @@ document.addEventListener('keydown', function(e) {
             </select>
           </div>
           <div class="form-group full-width">
-            <label class="form-label">FOTO DEL PRODUCTO (opcional)</label>
-            <div id="photo-drop-area" onclick="document.getElementById('a-photo').click()" style="border:1.5px dashed var(--border);border-radius:10px;padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--cream);">
-              <div id="photo-preview" style="display:none;margin-bottom:0.75rem;">
-                <img id="photo-preview-img" style="max-height:160px;max-width:100%;border-radius:8px;object-fit:cover;" />
+            <label class="form-label">FOTOS DEL PRODUCTO (hasta 3)</label>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+              <!-- Foto 1 -->
+              <div>
+                <div id="photo-drop-1" onclick="document.getElementById('a-photo-1').click()" style="border:1.5px dashed var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;background:var(--cream);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;">
+                  <img id="photo-preview-1" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:10px;" />
+                  <div id="photo-placeholder-1"><p style="font-size:20px;margin-bottom:2px;">📷</p><p style="font-size:10px;color:var(--muted);">Principal</p></div>
+                </div>
+                <input type="file" id="a-photo-1" accept="image/*" style="display:none" onchange="handleMultiPhoto(this,1)" />
+                <button type="button" id="photo-remove-1" onclick="removeMultiPhoto(1)" style="display:none;width:100%;margin-top:3px;background:none;border:none;font-size:10px;color:#A32D2D;cursor:pointer;font-family:inherit;">✕ Quitar</button>
               </div>
-              <div id="photo-placeholder">
-                <p style="font-size:26px;margin-bottom:4px;">📷</p>
-                <p style="font-size:12px;color:var(--muted);">Tocá para elegir una foto desde tu celular o PC</p>
-                <p style="font-size:11px;color:var(--muted);margin-top:2px;">JPG, PNG o WEBP · Máx 2MB</p>
+              <!-- Foto 2 -->
+              <div>
+                <div id="photo-drop-2" onclick="document.getElementById('a-photo-2').click()" style="border:1.5px dashed var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;background:var(--cream);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;">
+                  <img id="photo-preview-2" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:10px;" />
+                  <div id="photo-placeholder-2"><p style="font-size:20px;margin-bottom:2px;">📷</p><p style="font-size:10px;color:var(--muted);">Extra 1</p></div>
+                </div>
+                <input type="file" id="a-photo-2" accept="image/*" style="display:none" onchange="handleMultiPhoto(this,2)" />
+                <button type="button" id="photo-remove-2" onclick="removeMultiPhoto(2)" style="display:none;width:100%;margin-top:3px;background:none;border:none;font-size:10px;color:#A32D2D;cursor:pointer;font-family:inherit;">✕ Quitar</button>
+              </div>
+              <!-- Foto 3 -->
+              <div>
+                <div id="photo-drop-3" onclick="document.getElementById('a-photo-3').click()" style="border:1.5px dashed var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;background:var(--cream);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;position:relative;">
+                  <img id="photo-preview-3" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:10px;" />
+                  <div id="photo-placeholder-3"><p style="font-size:20px;margin-bottom:2px;">📷</p><p style="font-size:10px;color:var(--muted);">Extra 2</p></div>
+                </div>
+                <input type="file" id="a-photo-3" accept="image/*" style="display:none" onchange="handleMultiPhoto(this,3)" />
+                <button type="button" id="photo-remove-3" onclick="removeMultiPhoto(3)" style="display:none;width:100%;margin-top:3px;background:none;border:none;font-size:10px;color:#A32D2D;cursor:pointer;font-family:inherit;">✕ Quitar</button>
               </div>
             </div>
-            <input type="file" id="a-photo" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)" />
-            <button type="button" id="photo-remove-btn" onclick="removePhoto()" style="display:none;margin-top:6px;background:none;border:none;font-size:11px;color:#A32D2D;cursor:pointer;font-family:inherit;">✕ Quitar foto</button>
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">
+              EXTRAS OPCIONALES
+              <button type="button" onclick="addExtraRow()" style="background:var(--navy);color:white;border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit;">+ Agregar extra</button>
+            </label>
+            <div id="extras-list" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
+            <p style="font-size:11px;color:var(--muted);margin-top:6px;">Ej: "Bordado nombre" + $300. El cliente los elige antes de agregar al carrito.</p>
           </div>
         </div>
         <button class="save-btn" onclick="addProduct()">+ Guardar producto</button>
@@ -1141,6 +1206,15 @@ document.addEventListener('keydown', function(e) {
 <div class="size-modal-overlay" id="size-modal" onclick="if(event.target===this)closeSizeModal()">
   <div class="size-modal-box">
     <button class="size-modal-close" onclick="closeSizeModal()">&#x2715;</button>
+
+    <!-- Galería de fotos -->
+    <div id="modal-gallery" style="display:none;margin-bottom:1rem;position:relative;border-radius:10px;overflow:hidden;background:#f4f4f6;">
+      <div id="modal-gallery-slides" style="display:flex;transition:transform 0.3s;"></div>
+      <button onclick="galleryPrev()" id="gallery-prev" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.4);color:white;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
+      <button onclick="galleryNext()" id="gallery-next" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.4);color:white;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">›</button>
+      <div id="gallery-dots" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:5px;"></div>
+    </div>
+
     <div class="size-modal-head">
       <h3 class="size-modal-title" id="size-modal-title">Guía de talles</h3>
       <span class="size-modal-price" id="size-modal-price"></span>
@@ -1150,15 +1224,17 @@ document.addEventListener('keydown', function(e) {
     <div class="size-modal-section-label">Elegí tu talle</div>
     <div class="size-picker" id="size-picker"></div>
 
+    <!-- Extras opcionales -->
+    <div id="extras-section" style="display:none;">
+      <div class="size-modal-section-label">Extras opcionales</div>
+      <div id="extras-checkboxes" style="display:flex;flex-direction:column;gap:8px;margin-bottom:0.5rem;"></div>
+    </div>
+
     <div class="size-modal-section-label">Tabla de medidas</div>
     <table class="size-table">
       <thead>
         <tr>
-          <th>Talla</th>
-          <th>Pecho</th>
-          <th>Cintura</th>
-          <th>Cadera</th>
-          <th>Largo</th>
+          <th>Talla</th><th>Pecho</th><th>Cintura</th><th>Cadera</th><th>Largo</th>
         </tr>
       </thead>
       <tbody id="size-table-body"></tbody>
@@ -1219,7 +1295,7 @@ document.addEventListener('keydown', function(e) {
 
 <script>
 const ADMIN_PASSWORD = 'ElbioCampeon2025';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwpVExxNGym6upR-r4ubRvCVhk0ZtcESW1D8YyFWA7nLUM6m_VVSTvoyFI1DJ6eqms3IA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvUDwYmriMo5h2iNcEaPPWZC9NUGfX468VcxoWYW2Qu5wfTledXzqV7wp85VZRekkMbw/exec';
 
 const DEFAULT_PRODUCTS = [
   { id:1, name:'Tabla de asado grande', desc:'Madera maciza, grabado logo ELEF, incluye canaleta', price:2800, cat:'asado', icon:'🪵', badge:'NUEVO' },
@@ -1338,15 +1414,19 @@ function renderProducts(filter) {
   grid.innerHTML = list.map(p => {
     const hasSizes = ['indumentaria','remeras','abrigos'].includes(p.cat);
     const sizes = (p.sizes && p.sizes.length ? p.sizes : ['S','M','L','XL']);
+    const photos = p.photos && p.photos.length ? p.photos : (p.photo ? [p.photo] : []);
+    const hasExtras = p.extras && p.extras.length > 0;
     return `
     <div class="product-card${hasSizes ? ' has-sizes' : ''}" ${hasSizes ? `onclick="openSizeModalById(${p.id})"` : ''}>
-      <div class="product-img" style="${p.photo ? 'background:none;' : ''}">
-        ${p.photo
-          ? `<img src="${p.photo}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" />`
+      <div class="product-img" style="${photos.length ? 'background:none;' : ''}">
+        ${photos.length
+          ? `<img src="${photos[0]}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" />`
           : `<span class="product-emoji">${p.icon}</span>`}
         ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
         ${p.cat ? `<span class="product-cat-chip">${catLabel(p.cat)}</span>` : ''}
         ${hasSizes ? `<span class="product-tap-hint">Ver talles →</span>` : ''}
+        ${photos.length > 1 ? `<div style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:4px;">${photos.map((_,i)=>`<div style="width:5px;height:5px;border-radius:50%;background:${i===0?'white':'rgba(255,255,255,0.5)'}"></div>`).join('')}</div>` : ''}
+        ${hasExtras ? `<div style="position:absolute;top:8px;right:8px;background:var(--gold);color:var(--navy);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:0.05em;">EXTRAS</div>` : ''}
       </div>
       <div class="product-info">
         <p class="product-name">${p.name}</p>
@@ -1617,40 +1697,119 @@ function renderAdminOrders() {
     </tr>`).join('');
 }
 
-function handlePhotoUpload(input) {
+// ── MULTI-FOTO ────────────────────────────────────────────────────────────────
+const photosBase64 = { 1: null, 2: null, 3: null };
+
+function handleMultiPhoto(input, n) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) {
-    showToast('La foto es muy grande. Máximo 2MB.');
-    input.value = '';
-    return;
-  }
+  if (file.size > 2 * 1024 * 1024) { showToast('La foto es muy grande. Máximo 2MB.'); input.value = ''; return; }
   const reader = new FileReader();
-  reader.onload = function(e) {
-    photoBase64 = e.target.result;
-    document.getElementById('photo-preview-img').src = photoBase64;
-    document.getElementById('photo-preview').style.display = 'block';
-    document.getElementById('photo-placeholder').style.display = 'none';
-    document.getElementById('photo-remove-btn').style.display = 'inline-block';
-    document.getElementById('photo-drop-area').style.borderColor = 'var(--gold)';
+  reader.onload = e => {
+    photosBase64[n] = e.target.result;
+    const img = document.getElementById('photo-preview-' + n);
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('photo-placeholder-' + n).style.display = 'none';
+    document.getElementById('photo-remove-' + n).style.display = 'block';
+    document.getElementById('photo-drop-' + n).style.borderColor = 'var(--gold)';
   };
   reader.readAsDataURL(file);
 }
 
-function removePhoto() {
-  photoBase64 = null;
-  document.getElementById('a-photo').value = '';
-  document.getElementById('photo-preview').style.display = 'none';
-  document.getElementById('photo-placeholder').style.display = 'block';
-  document.getElementById('photo-remove-btn').style.display = 'none';
-  document.getElementById('photo-drop-area').style.borderColor = 'var(--border)';
+function removeMultiPhoto(n) {
+  photosBase64[n] = null;
+  document.getElementById('a-photo-' + n).value = '';
+  document.getElementById('photo-preview-' + n).style.display = 'none';
+  document.getElementById('photo-placeholder-' + n).style.display = 'flex';
+  document.getElementById('photo-remove-' + n).style.display = 'none';
+  document.getElementById('photo-drop-' + n).style.borderColor = 'var(--border)';
 }
 
+function resetAllPhotos() {
+  [1,2,3].forEach(n => removeMultiPhoto(n));
+}
+
+// Compatibilidad con código antiguo
+function handlePhotoUpload(input) { handleMultiPhoto(input, 1); }
+function removePhoto() { removeMultiPhoto(1); }
+
+// ── EXTRAS ────────────────────────────────────────────────────────────────────
+let extraRows = [];
+
+function addExtraRow() {
+  const id = Date.now();
+  extraRows.push(id);
+  const el = document.getElementById('extras-list');
+  const row = document.createElement('div');
+  row.id = 'extra-row-' + id;
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+  row.innerHTML = `
+    <input class="form-input" placeholder="Nombre (ej: Bordado nombre)" style="flex:2;" id="extra-name-${id}" />
+    <input class="form-input" type="number" placeholder="+ precio" style="flex:1;" id="extra-price-${id}" />
+    <button type="button" onclick="removeExtraRow(${id})" style="background:none;border:none;color:#A32D2D;font-size:16px;cursor:pointer;flex-shrink:0;">✕</button>`;
+  el.appendChild(row);
+}
+
+function removeExtraRow(id) {
+  extraRows = extraRows.filter(r => r !== id);
+  const el = document.getElementById('extra-row-' + id);
+  if (el) el.remove();
+}
+
+function getExtras() {
+  return extraRows.map(id => ({
+    name: document.getElementById('extra-name-' + id).value.trim(),
+    price: parseInt(document.getElementById('extra-price-' + id).value) || 0
+  })).filter(e => e.name);
+}
+
+function resetExtras() {
+  extraRows = [];
+  document.getElementById('extras-list').innerHTML = '';
+}
+
+// ── GALERÍA EN MODAL ──────────────────────────────────────────────────────────
+let _galleryPhotos = [];
+let _galleryIndex = 0;
+
+function openGallery(photos) {
+  _galleryPhotos = photos.filter(Boolean);
+  _galleryIndex = 0;
+  const container = document.getElementById('modal-gallery');
+  if (_galleryPhotos.length === 0) { container.style.display = 'none'; return; }
+  container.style.display = 'block';
+  renderGallery();
+}
+
+function renderGallery() {
+  const slides = document.getElementById('modal-gallery-slides');
+  slides.innerHTML = _galleryPhotos.map(src =>
+    `<div style="min-width:100%;aspect-ratio:4/3;"><img src="${src}" style="width:100%;height:100%;object-fit:cover;" /></div>`
+  ).join('');
+  slides.style.transform = `translateX(-${_galleryIndex * 100}%)`;
+  // Dots
+  const dots = document.getElementById('gallery-dots');
+  dots.innerHTML = _galleryPhotos.map((_, i) =>
+    `<div onclick="goGallery(${i})" style="width:6px;height:6px;border-radius:50%;background:${i===_galleryIndex?'white':'rgba(255,255,255,0.45)'};cursor:pointer;transition:background 0.2s;"></div>`
+  ).join('');
+  document.getElementById('gallery-prev').style.display = _galleryPhotos.length > 1 ? 'flex' : 'none';
+  document.getElementById('gallery-next').style.display = _galleryPhotos.length > 1 ? 'flex' : 'none';
+}
+
+function galleryPrev() { _galleryIndex = (_galleryIndex - 1 + _galleryPhotos.length) % _galleryPhotos.length; renderGallery(); }
+function galleryNext() { _galleryIndex = (_galleryIndex + 1) % _galleryPhotos.length; renderGallery(); }
+function goGallery(i) { _galleryIndex = i; renderGallery(); }
+
+// ── ADDPRODUCT (actualizado) ──────────────────────────────────────────────────
 function addProduct() {
   const name = document.getElementById('a-name').value.trim();
   const price = parseInt(document.getElementById('a-price').value);
   const desc = document.getElementById('a-desc').value.trim();
   if (!name || !price) { showToast('Completá nombre y precio'); return; }
+
+  const photos = [photosBase64[1], photosBase64[2], photosBase64[3]].filter(Boolean);
+  const extras = getExtras();
 
   const newProduct = {
     id: Date.now(),
@@ -1660,33 +1819,35 @@ function addProduct() {
     cat: document.getElementById('a-cat').value,
     icon: document.getElementById('a-icon').value,
     badge: document.getElementById('a-badge').value,
-    photo: photoBase64 || ''
+    photo: photos[0] || '',
+    photos: photos,
+    extras: extras
   };
 
   const btn = document.querySelector('.save-btn');
   btn.textContent = 'Guardando...';
   btn.disabled = true;
 
-  // Agregamos el producto localmente de inmediato (no esperar respuesta)
   products.push(newProduct);
   ['a-name','a-price','a-desc'].forEach(id => document.getElementById(id).value='');
-  removePhoto();
+  resetAllPhotos();
+  resetExtras();
   showToast(`"${name}" publicado en el catálogo`);
   renderProducts(currentFilter);
   btn.textContent = '+ Guardar producto';
   btn.disabled = false;
 
-  // Enviamos a Sheets en segundo plano con no-cors (evita el error de CORS)
+  // Guardar en Sheets — fotos extra en columnas separadas
   fetch(SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
+    method: 'POST', mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ type: 'product', ...newProduct })
-  })
-  .catch(() => {
-    // Si falla el envío a Sheets, el producto igual quedó en la página
-    console.warn('No se pudo guardar en Sheets, pero el producto quedó en pantalla.');
-  });
+    body: JSON.stringify({
+      type: 'product', ...newProduct,
+      photo2: photos[1] || '',
+      photo3: photos[2] || '',
+      extras: JSON.stringify(extras)
+    })
+  }).catch(() => {});
 }
 
 // ── NAVEGACIÓN ────────────────────────────────────────────────────────────────
