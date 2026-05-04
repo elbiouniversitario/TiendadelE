@@ -1,0 +1,25 @@
+{
+  "name": "Elbio Universitario",
+  "short_name": "Elbio U",
+  "description": "Tienda oficial del Club Elbio Universitario",
+  "start_url": "https://clubelbiouniversitario.com/",
+  "scope": "https://clubelbiouniversitario.com/",
+  "display": "standalone",
+  "background_color": "#F5F0E8",
+  "theme_color": "#1B2A4A",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
