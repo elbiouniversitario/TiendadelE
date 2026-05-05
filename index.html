@@ -1306,18 +1306,7 @@ document.addEventListener('keydown', function(e) {
 const ADMIN_PASSWORD = 'ElbioCampeon2025';
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvUDwYmriMo5h2iNcEaPPWZC9NUGfX468VcxoWYW2Qu5wfTledXzqV7wp85VZRekkMbw/exec';
 
-const DEFAULT_PRODUCTS = [
-  { id:1, name:'Tabla de asado grande', desc:'Madera maciza, grabado logo ELEF, incluye canaleta', price:2800, cat:'asado', icon:'🪵', badge:'NUEVO' },
-  { id:2, name:'Tabla de asado mediana', desc:'Madera maciza, grabado logo ELEF, ideal para regalo', price:1900, cat:'asado', icon:'🪵', badge:'' },
-  { id:3, name:'Set parrillero', desc:'Pinza + espátula + tenedor, mango de madera con logo', price:2200, cat:'asado', icon:'🔥', badge:'TOP' },
-  { id:4, name:'Jarra de cerveza 1L', desc:'Vidrio templado, grabado escudo ELEF, capacidad 1 litro', price:1600, cat:'bebidas', icon:'🍺', badge:'NUEVO' },
-  { id:5, name:'Jarra de cerveza 500ml', desc:'Vidrio templado, grabado escudo ELEF, capacidad 500ml', price:1100, cat:'bebidas', icon:'🍺', badge:'' },
-  { id:6, name:'Vaso pinta oficial', desc:'Vidrio grueso, logo del club, pack x4 disponible', price:800, cat:'bebidas', icon:'🍺', badge:'' },
-  { id:7, name:'Remera polo informal', desc:'Piqué algodón, bordado escudo ELEF, varios colores', price:1800, cat:'indumentaria', icon:'👕', badge:'TOP', sizes:['S','M','L','XL','XXL'] },
-  { id:8, name:'Buzo con capucha', desc:'Algodón premium, estampado grande ELEF, tallas S-XXL', price:2500, cat:'indumentaria', icon:'👕', badge:'EXCLUSIVO', sizes:['S','M','L','XL','XXL'] },
-  { id:9, name:'Gorra del club', desc:'6 paneles, bordado escudo, ajuste trasero, varios colores', price:950, cat:'accesorios', icon:'🧢', badge:'' },
-  { id:10, name:'Llavero escudo', desc:'Metal troquelado, escudo ELEF esmaltado, acabado premium', price:350, cat:'accesorios', icon:'🏆', badge:'' },
-];
+const DEFAULT_PRODUCTS = [];
 
 let products = [...DEFAULT_PRODUCTS];
 let orders = [];
@@ -1416,6 +1405,15 @@ function loadProductsFromSheets() {
 function renderProducts(filter) {
   const grid = document.getElementById('products-grid');
   const list = filter === 'all' ? products : products.filter(p => p.cat === filter);
+  if (products.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center;">
+        <div style="font-size:3.5rem;margin-bottom:1rem;">🏆</div>
+        <h3 style="font-family:Georgia,serif;font-size:1.4rem;color:var(--navy);margin-bottom:0.5rem;">Próximamente todos tus artículos del club</h3>
+        <p style="color:var(--muted);font-size:13px;max-width:320px;line-height:1.6;">Estamos preparando el catálogo oficial del Elbio Universitario. ¡Volvé pronto!</p>
+      </div>`;
+    return;
+  }
   if (list.length === 0) {
     grid.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:1rem">No hay productos en esta categoría.</p>';
     return;
