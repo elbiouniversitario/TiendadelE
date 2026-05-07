@@ -538,36 +538,33 @@
 // ── TABLA DE TALLES ───────────────────────────────────────────────────────────
 const SIZE_DATA = {
   remeras: {
-    hint: 'Para remeras y polos: medí el pecho rodeando la parte más ancha del torso. El largo se mide desde el hombro hasta el bajo.',
+    hint: '*Tolerancia: +/- 2 cms. Medidas en centímetros.',
     rows: [
-      { talla:'XS', pecho:'80-84', cintura:'66-70', cadera:'86-90', largo:'66' },
-      { talla:'S',  pecho:'84-88', cintura:'70-74', cadera:'90-94', largo:'68' },
-      { talla:'M',  pecho:'88-92', cintura:'74-78', cadera:'94-98', largo:'70' },
-      { talla:'L',  pecho:'92-97', cintura:'78-83', cadera:'98-103',largo:'72' },
-      { talla:'XL', pecho:'97-102',cintura:'83-88', cadera:'103-108',largo:'74' },
-      { talla:'XXL',pecho:'102-108',cintura:'88-94',cadera:'108-114',largo:'76' },
+      { talla:'S',  ancho:'48', largo:'74' },
+      { talla:'M',  ancho:'53', largo:'77' },
+      { talla:'L',  ancho:'58', largo:'79' },
+      { talla:'XL', ancho:'63', largo:'82' },
+      { talla:'XXL',ancho:'69', largo:'85' },
     ]
   },
   indumentaria: {
-    hint: 'Para remeras y polos: medí el pecho rodeando la parte más ancha del torso. El largo se mide desde el hombro hasta el bajo.',
+    hint: '*Tolerancia: +/- 2 cms. Medidas en centímetros.',
     rows: [
-      { talla:'XS', pecho:'80-84', cintura:'66-70', cadera:'86-90', largo:'66' },
-      { talla:'S',  pecho:'84-88', cintura:'70-74', cadera:'90-94', largo:'68' },
-      { talla:'M',  pecho:'88-92', cintura:'74-78', cadera:'94-98', largo:'70' },
-      { talla:'L',  pecho:'92-97', cintura:'78-83', cadera:'98-103',largo:'72' },
-      { talla:'XL', pecho:'97-102',cintura:'83-88', cadera:'103-108',largo:'74' },
-      { talla:'XXL',pecho:'102-108',cintura:'88-94',cadera:'108-114',largo:'76' },
+      { talla:'S',  ancho:'48', largo:'74' },
+      { talla:'M',  ancho:'53', largo:'77' },
+      { talla:'L',  ancho:'58', largo:'79' },
+      { talla:'XL', ancho:'63', largo:'82' },
+      { talla:'XXL',ancho:'69', largo:'85' },
     ]
   },
   abrigos: {
-    hint: 'Para canguros, camperas y parkas: tomá la medida del pecho y sumá 2-3 cm para mayor comodidad. El largo se mide desde el hombro hasta el bajo de la prenda.',
+    hint: '*Tolerancia: +/- 2 cms. Medidas en centímetros.',
     rows: [
-      { talla:'XS', pecho:'84-88', cintura:'70-74', cadera:'90-94', largo:'64' },
-      { talla:'S',  pecho:'88-92', cintura:'74-78', cadera:'94-98', largo:'66' },
-      { talla:'M',  pecho:'92-96', cintura:'78-82', cadera:'98-102',largo:'68' },
-      { talla:'L',  pecho:'96-101',cintura:'82-87', cadera:'102-107',largo:'70' },
-      { talla:'XL', pecho:'101-106',cintura:'87-92',cadera:'107-112',largo:'72' },
-      { talla:'XXL',pecho:'106-112',cintura:'92-98',cadera:'112-118',largo:'74' },
+      { talla:'S',  ancho:'48', largo:'74' },
+      { talla:'M',  ancho:'53', largo:'77' },
+      { talla:'L',  ancho:'58', largo:'79' },
+      { talla:'XL', ancho:'63', largo:'82' },
+      { talla:'XXL',ancho:'69', largo:'85' },
     ]
   }
 };
@@ -597,7 +594,7 @@ function openSizeModal(product, preselectedSize) {
   document.getElementById('size-hint').textContent = data.hint;
   const tbody = document.getElementById('size-table-body');
   tbody.innerHTML = data.rows.map(r =>
-    '<tr data-talla="' + r.talla + '"><td>' + r.talla + '</td><td>' + r.pecho + '</td><td>' + r.cintura + '</td><td>' + r.cadera + '</td><td>' + r.largo + '</td></tr>'
+    '<tr data-talla="' + r.talla + '"><td>' + r.talla + '</td><td>' + r.ancho + '</td><td>' + r.largo + '</td></tr>'
   ).join('');
 
   // Galería de fotos
@@ -1320,7 +1317,7 @@ document.addEventListener('keydown', function(e) {
     <table class="size-table">
       <thead>
         <tr>
-          <th>Talla</th><th>Pecho</th><th>Cintura</th><th>Cadera</th><th>Largo</th>
+          <th>TALLE</th><th>ANCHO</th><th>LARGO</th>
         </tr>
       </thead>
       <tbody id="size-table-body"></tbody>
@@ -2012,6 +2009,14 @@ function verifySocio() {
   const ci = document.getElementById('socio-ci-input').value.trim();
   if (!ci) { showToast('Ingresá tu número de cédula'); return; }
 
+  // Estado de carga
+  const btn = document.querySelector('#socio-modal-form button');
+  const originalText = btn.textContent;
+  btn.textContent = 'Verificando...';
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+  document.getElementById('socio-ci-input').disabled = true;
+
   fetch(SCRIPT_URL + '?type=verificar_socio&ci=' + encodeURIComponent(ci))
     .then(r => r.json())
     .then(data => {
@@ -2032,6 +2037,12 @@ function verifySocio() {
     .catch(() => {
       document.getElementById('socio-modal-form').style.display = 'none';
       document.getElementById('socio-modal-error').style.display = 'block';
+    })
+    .finally(() => {
+      btn.textContent = originalText;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      document.getElementById('socio-ci-input').disabled = false;
     });
 }
 
