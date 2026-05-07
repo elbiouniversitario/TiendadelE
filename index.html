@@ -667,7 +667,10 @@ function addSelectedSizeToCart() {
   const selectedExtraNames = Object.keys(_selectedExtras).map(i => extrasArr[i]?.name).filter(Boolean);
   const extrasTotal = Object.values(_selectedExtras).reduce((a,b) => a+b, 0);
   const extrasSuffix = selectedExtraNames.length ? ' + ' + selectedExtraNames.join(', ') : '';
-  const variantId = p.id + '-' + _selectedSize + (selectedExtraNames.length ? '-' + selectedExtraNames.join('-') : '');
+  const basePrice = Number(p.price) + extrasTotal;
+  const finalPrice = (socioVerified && p.socioDiscount) ? Math.round(basePrice * (1 - p.socioDiscount / 100)) : basePrice;
+  const socioSuffix = (socioVerified && p.socioDiscount) ? '-socio' : '';
+  const variantId = p.id + '-' + _selectedSize + (selectedExtraNames.length ? '-' + selectedExtraNames.join('-') : '') + socioSuffix;
   const ex = cart.find(x => String(x.id) === variantId);
   if (ex) {
     ex.qty++;
@@ -675,7 +678,9 @@ function addSelectedSizeToCart() {
     cart.push({
       ...p, id: variantId,
       name: p.name + ' (talle ' + _selectedSize + ')' + extrasSuffix,
-      price: Number(p.price) + extrasTotal,
+      price: finalPrice,
+      originalPrice: basePrice,
+      socioDescuento: (socioVerified && p.socioDiscount) ? p.socioDiscount : 0,
       qty: 1, size: _selectedSize, extras: selectedExtraNames
     });
   }
@@ -728,6 +733,41 @@ document.addEventListener('keydown', function(e) {
   </div>
 </nav>
 <div class="mobile-menu-backdrop" id="mobile-backdrop" onclick="toggleMobileMenu()"></div>
+
+<!-- MODAL VERIFICACIÓN SOCIO -->
+<div id="socio-modal" onclick="if(event.target===this)closeSocioModal()" style="display:none;position:fixed;inset:0;background:rgba(10,15,30,0.75);z-index:700;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:white;border-radius:14px;width:100%;max-width:420px;padding:1.75rem;position:relative;box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+    <button onclick="closeSocioModal()" style="position:absolute;top:12px;right:14px;background:var(--cream);border:none;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    <div style="text-align:center;margin-bottom:1.25rem;">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">🎫</div>
+      <h3 style="font-family:Georgia,serif;font-size:1.1rem;color:var(--navy);margin-bottom:0.3rem;">Descuento para socios</h3>
+      <p id="socio-modal-discount-label" style="font-size:13px;color:var(--gold);font-weight:700;"></p>
+      <p style="font-size:12px;color:var(--muted);margin-top:4px;">Ingresá tu número de cédula para verificar que sos socio activo.</p>
+    </div>
+    <div id="socio-modal-form">
+      <input id="socio-ci-input" class="form-input" type="number" placeholder="Ej: 48573467" style="width:100%;margin-bottom:10px;font-size:15px;text-align:center;" />
+      <button onclick="verifySocio()" style="width:100%;background:var(--navy);color:white;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Verificar cédula</button>
+    </div>
+    <div id="socio-modal-success" style="display:none;text-align:center;">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">✅</div>
+      <p style="font-weight:700;color:var(--navy);font-size:1rem;" id="socio-success-name"></p>
+      <p style="font-size:12px;color:var(--muted);margin-top:4px;" id="socio-success-msg"></p>
+      <button onclick="closeSocioModal()" style="margin-top:1rem;background:var(--navy);color:white;border:none;border-radius:8px;padding:9px 22px;font-size:12px;cursor:pointer;font-family:inherit;">Listo, ver precio →</button>
+    </div>
+    <div id="socio-modal-error" style="display:none;text-align:center;">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">❌</div>
+      <p style="font-weight:600;color:#A32D2D;font-size:13px;margin-bottom:0.5rem;">No encontramos tu cédula en el registro de socios.</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">¿Sos socio y no podés verificarte? Escribinos por WhatsApp y lo resolvemos.</p>
+      <a href="https://wa.me/59899019892?text=Hola,%20soy%20socio%20y%20no%20pude%20verificar%20mi%20c%C3%A9dula%20en%20la%20tienda." target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#25D366;color:white;text-decoration:none;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:700;">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:white;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.711.306 1.266.489 1.699.626.714.227 1.363.195 1.876.118.572-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+        Contactar por WhatsApp
+      </a>
+      <div style="margin-top:10px;">
+        <button onclick="resetSocioModal()" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit;text-decoration:underline;">Intentar con otra cédula</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- CATÁLOGO -->
 <section id="sec-catalog" class="active">
@@ -918,6 +958,19 @@ document.addEventListener('keydown', function(e) {
             </label>
             <div id="extras-list" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
             <p style="font-size:11px;color:var(--muted);margin-top:6px;">Ej: "Bordado nombre" + $300. El cliente los elige antes de agregar al carrito.</p>
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">DESCUENTO PARA SOCIOS</label>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:4px;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" id="a-socio-discount-enabled" onchange="toggleSocioDiscountInput()" style="width:16px;height:16px;accent-color:var(--navy);" />
+                Ofrecer descuento a socios
+              </label>
+              <div id="socio-discount-input-wrap" style="display:none;align-items:center;gap:6px;">
+                <input class="form-input" type="number" id="a-socio-discount" min="1" max="99" placeholder="%" style="width:70px;" />
+                <span style="font-size:12px;color:var(--muted);">% de descuento</span>
+              </div>
+            </div>
           </div>
         </div>
         <button class="save-btn" onclick="addProduct()">+ Guardar producto</button>
@@ -1317,7 +1370,7 @@ document.addEventListener('keydown', function(e) {
 
 <script>
 const ADMIN_PASSWORD = 'ElbioCampeon2025';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvUDwYmriMo5h2iNcEaPPWZC9NUGfX468VcxoWYW2Qu5wfTledXzqV7wp85VZRekkMbw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEkMuKCVfla50Rtk4Mk4YPNVSdsK81LKCaGbpGv0xNr3rCeYtrWWhpRqFfiKCyZVJu/exec';
 
 const DEFAULT_PRODUCTS = [];
 
@@ -1456,7 +1509,11 @@ function renderProducts(filter) {
             ${sizes.map(s => `<span class="size-chip clickable" onclick="openSizeModalById(${p.id}, '${s}')">${s}</span>`).join('')}
           </div>` : ''}
         <div class="product-footer">
-          <span class="product-price">$${Number(p.price).toLocaleString()}</span>
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <span class="product-price" id="price-display-${p.id}">${socioVerified && p.socioDiscount ? `<span style="text-decoration:line-through;color:var(--muted);font-size:11px;">$${Number(p.price).toLocaleString()}</span> <span style="color:var(--gold);">$${Math.round(p.price*(1-p.socioDiscount/100)).toLocaleString()}</span>` : `$${Number(p.price).toLocaleString()}`}</span>
+            ${p.socioDiscount && !socioVerified ? `<button onclick="event.stopPropagation();openSocioModal(${p.id})" style="background:none;border:0.5px solid var(--gold);color:var(--gold);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.04em;">🎫 ${p.socioDiscount}% SOCIOS</button>` : ''}
+            ${p.socioDiscount && socioVerified ? `<span style="font-size:9px;color:#1f7a4d;font-weight:700;">✓ Descuento socio aplicado</span>` : ''}
+          </div>
           <button class="add-btn" onclick="event.stopPropagation(); ${hasSizes ? `openSizeModalById(${p.id})` : `addToCart(${p.id}, this)`}">${hasSizes ? 'Elegir talle' : '+ Agregar'}</button>
         </div>
       </div>
@@ -1487,16 +1544,18 @@ function filterProducts(cat, btn) {
 function addToCart(id, btn) {
   const p = products.find(x => String(x.id) === String(id));
   if (!p) return;
-  const ex = cart.find(x => String(x.id) === String(id));
+  const finalPrice = (socioVerified && p.socioDiscount) ? Math.round(p.price * (1 - p.socioDiscount / 100)) : p.price;
+  const cartId = socioVerified && p.socioDiscount ? String(id) + '-socio' : String(id);
+  const ex = cart.find(x => String(x.id) === cartId);
   if (ex) {
     ex.qty++;
   } else {
-    cart.push({...p, qty:1});
+    cart.push({...p, id: cartId, price: finalPrice, originalPrice: p.price, qty: 1,
+      socioDescuento: (socioVerified && p.socioDiscount) ? p.socioDiscount : 0});
   }
   saveCart();
   updateCartCount();
 
-  // Feedback visual en el botón
   if (btn) {
     const original = btn.innerHTML;
     btn.classList.add('added');
@@ -1530,13 +1589,18 @@ function renderCart() {
     return;
   }
   const subtotal = cart.reduce((s,i) => s+i.price*i.qty, 0);
+  const originalTotal = cart.reduce((s,i) => s+(i.originalPrice||i.price)*i.qty, 0);
+  const hasSocioDiscount = cart.some(i => i.socioDescuento > 0);
   el.innerHTML = `
     <div class="cart-items">${cart.map(i => `
       <div class="cart-item">
         <div class="cart-item-icon">${i.icon}</div>
         <div class="cart-item-info">
-          <p class="cart-item-name">${i.name}</p>
-          <p class="cart-item-price">$${(i.price*i.qty).toLocaleString()}</p>
+          <p class="cart-item-name">${i.name}${i.socioDescuento ? ` <span style="font-size:9px;background:var(--gold);color:var(--navy);border-radius:3px;padding:1px 5px;font-weight:700;">-${i.socioDescuento}% SOCIO</span>` : ''}</p>
+          <p class="cart-item-price">
+            ${i.socioDescuento ? `<span style="text-decoration:line-through;color:var(--muted);font-size:11px;">$${(( i.originalPrice||i.price)*i.qty).toLocaleString()}</span> ` : ''}
+            $${(i.price*i.qty).toLocaleString()}
+          </p>
         </div>
         <div class="qty-controls">
           <button class="qty-btn" onclick="changeQty('${i.id}',-1)">−</button>
@@ -1547,7 +1611,9 @@ function renderCart() {
       </div>`).join('')}
     </div>
     <div class="cart-summary">
+      ${hasSocioDiscount ? `<div class="summary-row" style="color:var(--muted);text-decoration:line-through;"><span>Subtotal sin descuento</span><span>$${originalTotal.toLocaleString()}</span></div>` : ''}
       <div class="summary-row"><span>Subtotal (${cart.reduce((s,i)=>s+i.qty,0)} artículos)</span><span>$${subtotal.toLocaleString()}</span></div>
+      ${hasSocioDiscount ? `<div class="summary-row" style="color:#1f7a4d;font-weight:600;"><span>Ahorrás</span><span>-$${(originalTotal-subtotal).toLocaleString()}</span></div>` : ''}
       <div class="summary-row"><span>Entrega</span><span>A coordinar</span></div>
       <div class="summary-total"><span>Total estimado</span><span>$${subtotal.toLocaleString()}</span></div>
       <button class="checkout-btn" onclick="goToOrder()">Confirmar pedido →</button>
@@ -1822,6 +1888,11 @@ function galleryNext() { _galleryIndex = (_galleryIndex + 1) % _galleryPhotos.le
 function goGallery(i) { _galleryIndex = i; renderGallery(); }
 
 // ── ADDPRODUCT (actualizado) ──────────────────────────────────────────────────
+function toggleSocioDiscountInput() {
+  const enabled = document.getElementById('a-socio-discount-enabled').checked;
+  document.getElementById('socio-discount-input-wrap').style.display = enabled ? 'flex' : 'none';
+}
+
 function addProduct() {
   const name = document.getElementById('a-name').value.trim();
   const price = parseInt(document.getElementById('a-price').value);
@@ -1830,18 +1901,19 @@ function addProduct() {
 
   const photos = [photosBase64[1], photosBase64[2], photosBase64[3]].filter(Boolean);
   const extras = getExtras();
+  const socioEnabled = document.getElementById('a-socio-discount-enabled').checked;
+  const socioDiscount = socioEnabled ? (parseInt(document.getElementById('a-socio-discount').value) || 0) : 0;
 
   const newProduct = {
     id: Date.now(),
-    name,
-    desc: desc || '',
-    price,
+    name, desc: desc || '', price,
     cat: document.getElementById('a-cat').value,
     icon: document.getElementById('a-icon').value,
     badge: document.getElementById('a-badge').value,
     photo: photos[0] || '',
     photos: photos,
-    extras: extras
+    extras: extras,
+    socioDiscount: socioDiscount
   };
 
   const btn = document.querySelector('.save-btn');
@@ -1850,6 +1922,9 @@ function addProduct() {
 
   products.push(newProduct);
   ['a-name','a-price','a-desc'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('a-socio-discount-enabled').checked = false;
+  document.getElementById('a-socio-discount').value = '';
+  document.getElementById('socio-discount-input-wrap').style.display = 'none';
   resetAllPhotos();
   resetExtras();
   showToast(`"${name}" publicado en el catálogo`);
@@ -1857,7 +1932,6 @@ function addProduct() {
   btn.textContent = '+ Guardar producto';
   btn.disabled = false;
 
-  // Guardar en Sheets — fotos extra en columnas separadas
   fetch(SCRIPT_URL, {
     method: 'POST', mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
@@ -1865,9 +1939,64 @@ function addProduct() {
       type: 'product', ...newProduct,
       photo2: photos[1] || '',
       photo3: photos[2] || '',
-      extras: JSON.stringify(extras)
+      extras: JSON.stringify(extras),
+      socioDiscount: socioDiscount
     })
   }).catch(() => {});
+}
+
+// ── DESCUENTO SOCIOS ──────────────────────────────────────────────────────────
+let socioVerified = false;
+let socioName = '';
+let _socioModalProductId = null;
+
+function openSocioModal(productId) {
+  _socioModalProductId = productId;
+  const p = products.find(x => String(x.id) === String(productId));
+  if (p) document.getElementById('socio-modal-discount-label').textContent = `${p.socioDiscount}% de descuento para socios`;
+  resetSocioModal();
+  const modal = document.getElementById('socio-modal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('socio-ci-input').focus(), 100);
+}
+
+function closeSocioModal() {
+  document.getElementById('socio-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function resetSocioModal() {
+  document.getElementById('socio-modal-form').style.display = 'block';
+  document.getElementById('socio-modal-success').style.display = 'none';
+  document.getElementById('socio-modal-error').style.display = 'none';
+  document.getElementById('socio-ci-input').value = '';
+}
+
+function verifySocio() {
+  const ci = document.getElementById('socio-ci-input').value.trim();
+  if (!ci) { showToast('Ingresá tu número de cédula'); return; }
+
+  fetch(SCRIPT_URL + '?type=verificar_socio&ci=' + encodeURIComponent(ci))
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.ok) {
+        socioVerified = true;
+        socioName = data.nombre;
+        document.getElementById('socio-modal-form').style.display = 'none';
+        document.getElementById('socio-modal-success').style.display = 'block';
+        document.getElementById('socio-success-name').textContent = `¡Hola, ${data.nombre}!`;
+        document.getElementById('socio-success-msg').textContent = `Tu descuento quedó aplicado para todos los productos de esta sesión.`;
+        renderProducts(currentFilter);
+      } else {
+        document.getElementById('socio-modal-form').style.display = 'none';
+        document.getElementById('socio-modal-error').style.display = 'block';
+      }
+    })
+    .catch(() => {
+      document.getElementById('socio-modal-form').style.display = 'none';
+      document.getElementById('socio-modal-error').style.display = 'block';
+    });
 }
 
 // ── NAVEGACIÓN ────────────────────────────────────────────────────────────────
