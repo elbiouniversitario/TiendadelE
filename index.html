@@ -618,7 +618,7 @@ function openSizeModal(product, preselectedSize) {
   }
 
   // Talles
-  const sizes = (product.sizes && product.sizes.length ? product.sizes : ['S','M','L','XL']);
+  const sizes = (product.sizes && product.sizes.length ? product.sizes : ['S','M','L','XL','XXL']);
   const picker = document.getElementById('size-picker');
   picker.innerHTML = sizes.map(s =>
     `<button type="button" class="size-pick-btn" data-size="${s}" onclick="selectSize('${s}')">${s}</button>`
@@ -1494,7 +1494,7 @@ function renderProducts(filter) {
   }
   grid.innerHTML = list.map(p => {
     const hasSizes = ['indumentaria','remeras','abrigos'].includes(p.cat);
-    const sizes = (p.sizes && p.sizes.length ? p.sizes : ['S','M','L','XL']);
+    const sizes = (p.sizes && p.sizes.length ? p.sizes : ['S','M','L','XL','XXL']);
     const photos = p.photos && p.photos.length ? p.photos : (p.photo ? [p.photo] : []);
     const hasExtras = p.extras && p.extras.length > 0;
     return `
