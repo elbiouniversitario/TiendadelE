@@ -793,6 +793,17 @@ document.addEventListener('keydown', function(e) {
       <button class="filter-btn" onclick="filterProducts('indumentaria',this)">Indumentaria</button>
       <button class="filter-btn" onclick="filterProducts('accesorios',this)">Accesorios</button>
     </div>
+    <!-- Banner descuento socio -->
+    <div id="socio-banner" onclick="openSocioModal(null)" style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,var(--navy) 0%,#2A3A5E 100%);border-radius:12px;padding:14px 18px;margin-bottom:1.25rem;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='1'">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.6rem;">🎫</span>
+        <div>
+          <div id="socio-banner-title" style="font-size:13px;font-weight:700;color:white;letter-spacing:0.03em;">Acceder a descuento socio</div>
+          <div id="socio-banner-sub" style="font-size:11px;color:rgba(255,255,255,0.65);margin-top:2px;">Verificá tu cédula y accedé a precios exclusivos</div>
+        </div>
+      </div>
+      <div id="socio-banner-status" style="font-size:11px;font-weight:700;color:var(--gold);white-space:nowrap;">Ingresar →</div>
+    </div>
     <div class="products-grid" id="products-grid"></div>
   </div>
 </section>
@@ -1511,8 +1522,8 @@ function renderProducts(filter) {
         <div class="product-footer">
           <div style="display:flex;flex-direction:column;gap:2px;">
             <span class="product-price" id="price-display-${p.id}">${socioVerified && p.socioDiscount ? `<span style="text-decoration:line-through;color:var(--muted);font-size:11px;">$${Number(p.price).toLocaleString()}</span> <span style="color:var(--gold);">$${Math.round(p.price*(1-p.socioDiscount/100)).toLocaleString()}</span>` : `$${Number(p.price).toLocaleString()}`}</span>
-            ${p.socioDiscount && !socioVerified ? `<button onclick="event.stopPropagation();openSocioModal(${p.id})" style="background:none;border:0.5px solid var(--gold);color:var(--gold);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.04em;">🎫 ${p.socioDiscount}% SOCIOS</button>` : ''}
-            ${p.socioDiscount && socioVerified ? `<span style="font-size:9px;color:#1f7a4d;font-weight:700;">✓ Descuento socio aplicado</span>` : ''}
+            ${p.socioDiscount && !socioVerified ? `<span style="background:rgba(201,168,76,0.15);border:0.5px solid var(--gold);color:var(--gold);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:0.04em;display:inline-block;">🎫 ${p.socioDiscount}% SOCIOS</span>` : ''}
+            ${p.socioDiscount && socioVerified ? `<span style="font-size:9px;color:#1f7a4d;font-weight:700;">✓ Descuento aplicado</span>` : ''}
           </div>
           <button class="add-btn" onclick="event.stopPropagation(); ${hasSizes ? `openSizeModalById(${p.id})` : `addToCart(${p.id}, this)`}">${hasSizes ? 'Elegir talle' : '+ Agregar'}</button>
         </div>
@@ -1950,10 +1961,34 @@ let socioVerified = false;
 let socioName = '';
 let _socioModalProductId = null;
 
+function updateSocioBanner() {
+  const title = document.getElementById('socio-banner-title');
+  const sub = document.getElementById('socio-banner-sub');
+  const status = document.getElementById('socio-banner-status');
+  if (!title) return;
+  if (socioVerified) {
+    title.textContent = `¡Hola, ${socioName}! Descuento activado`;
+    sub.textContent = 'Tus precios de socio están aplicados en todos los productos';
+    status.textContent = '✓ Activo';
+    status.style.color = '#1f7a4d';
+    document.getElementById('socio-banner').style.background = 'linear-gradient(135deg,#1a3a2a 0%,#1f7a4d 100%)';
+  } else {
+    title.textContent = 'Acceder a descuento socio';
+    sub.textContent = 'Verificá tu cédula y accedé a precios exclusivos';
+    status.textContent = 'Ingresar →';
+    status.style.color = 'var(--gold)';
+    document.getElementById('socio-banner').style.background = 'linear-gradient(135deg,var(--navy) 0%,#2A3A5E 100%)';
+  }
+}
+
 function openSocioModal(productId) {
   _socioModalProductId = productId;
-  const p = products.find(x => String(x.id) === String(productId));
-  if (p) document.getElementById('socio-modal-discount-label').textContent = `${p.socioDiscount}% de descuento para socios`;
+  const p = productId ? products.find(x => String(x.id) === String(productId)) : null;
+  if (p && p.socioDiscount) {
+    document.getElementById('socio-modal-discount-label').textContent = `${p.socioDiscount}% de descuento para socios`;
+  } else {
+    document.getElementById('socio-modal-discount-label').textContent = 'Descuentos exclusivos para socios';
+  }
   resetSocioModal();
   const modal = document.getElementById('socio-modal');
   modal.style.display = 'flex';
@@ -1987,6 +2022,7 @@ function verifySocio() {
         document.getElementById('socio-modal-success').style.display = 'block';
         document.getElementById('socio-success-name').textContent = `¡Hola, ${data.nombre}!`;
         document.getElementById('socio-success-msg').textContent = `Tu descuento quedó aplicado para todos los productos de esta sesión.`;
+        updateSocioBanner();
         renderProducts(currentFilter);
       } else {
         document.getElementById('socio-modal-form').style.display = 'none';
