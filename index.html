@@ -1389,7 +1389,7 @@ document.addEventListener('keydown', function(e) {
 
 <script>
 const ADMIN_PASSWORD = 'ElbioCampeon2025';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwWM_6X19FqxZaN1tjuDko2RvfTN2XTEZKjm1HpCtxqe3UhN9K4vvm5o4Z_o52_vnFhDA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxPLks60nzNJtOogyzCAnoP79lK2Z4vYN8ErECayqnJqjuEUuWDSEVnMsKNByus52s8Eg/exec';
 
 const DEFAULT_PRODUCTS = [];
 
@@ -1711,23 +1711,20 @@ function submitOrder() {
   }).catch(() => {});
 
   // 2. Crear link de pago via Apps Script → dLocal Go
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({
-      type: 'create_payment',
-      amount: total,
-      currency: 'UYU',
-      country: 'UY',
-      order_id: orderId,
-      description: `Pedido #${orderId} - Elbio Universitario`,
-      payer_name: name,
-      payer_email: email,
-      success_url: 'https://clubelbiouniversitario.com/?payment=success&order=' + orderId,
-      back_url: 'https://clubelbiouniversitario.com/?payment=cancelled&order=' + orderId,
-      notification_url: SCRIPT_URL
-    })
-  })
+  const paymentParams = new URLSearchParams({
+    type: 'create_payment',
+    amount: total,
+    currency: 'UYU',
+    country: 'UY',
+    order_id: orderId,
+    description: `Pedido #${orderId} - Elbio Universitario`,
+    payer_name: name,
+    payer_email: email,
+    success_url: 'https://clubelbiouniversitario.com/?payment=success&order=' + orderId,
+    back_url: 'https://clubelbiouniversitario.com/?payment=cancelled&order=' + orderId
+  });
+
+  fetch(SCRIPT_URL + '?' + paymentParams.toString())
   .then(r => r.json())
   .then(data => {
     if (data && data.redirect_url) {
