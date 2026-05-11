@@ -1389,7 +1389,7 @@ document.addEventListener('keydown', function(e) {
 
 <script>
 const ADMIN_PASSWORD = 'ElbioCampeon2025';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxPLks60nzNJtOogyzCAnoP79lK2Z4vYN8ErECayqnJqjuEUuWDSEVnMsKNByus52s8Eg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxqLQx1XhZg_Y2UOJiLcREahswlN3RjhZdZak0bxoRYeriAsuEKTIm9C3YC424c269-wQ/exec';
 
 const DEFAULT_PRODUCTS = [];
 
@@ -1710,7 +1710,7 @@ function submitOrder() {
     })
   }).catch(() => {});
 
-  // 2. Crear link de pago via Apps Script → dLocal Go
+  // 2. Abrir el Apps Script directamente — él llama a dLocal y redirige
   const paymentParams = new URLSearchParams({
     type: 'create_payment',
     amount: total,
@@ -1724,22 +1724,8 @@ function submitOrder() {
     back_url: 'https://clubelbiouniversitario.com/?payment=cancelled&order=' + orderId
   });
 
-  fetch(SCRIPT_URL + '?' + paymentParams.toString())
-  .then(r => r.json())
-  .then(data => {
-    if (data && data.redirect_url) {
-      window.location.href = data.redirect_url;
-    } else {
-      showToast('Error al generar el link de pago. Intentá de nuevo.');
-      btn.textContent = 'Ir a pagar →';
-      btn.disabled = false;
-    }
-  })
-  .catch(() => {
-    showToast('Error de conexión. Intentá de nuevo.');
-    btn.textContent = 'Ir a pagar →';
-    btn.disabled = false;
-  });
+  // Redirigir directo — el Apps Script llama a dLocal y redirige al checkout
+  window.location.href = SCRIPT_URL + '?' + paymentParams.toString();
 }
 
 function retryPayment() {
