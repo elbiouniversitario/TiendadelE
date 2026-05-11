@@ -818,7 +818,7 @@ document.addEventListener('keydown', function(e) {
 <section id="sec-order">
   <div class="order-wrap">
     <h2 class="sec-title">Confirmar pedido</h2>
-    <p class="sec-sub">Completá tus datos y te contactamos en menos de 24 hs</p>
+    <p class="sec-sub">Completá tus datos y procedé al pago</p>
     <div id="order-summary-area"></div>
     <div id="order-form-area">
       <div class="form-group">
@@ -843,14 +843,25 @@ document.addEventListener('keydown', function(e) {
         <label class="form-label">NOTAS ADICIONALES</label>
         <textarea class="form-textarea" id="f-notes" placeholder="Talla, color, grabado personalizado, fecha de entrega..."></textarea>
       </div>
-      <button class="submit-btn" onclick="submitOrder()">Confirmar pedido →</button>
+      <button class="submit-btn" id="pay-btn" onclick="submitOrder()">Ir a pagar →</button>
     </div>
     <div id="order-success" style="display:none">
       <div class="success-screen">
         <div class="success-icon">✓</div>
-        <h2>¡Pedido recibido!</h2>
-        <p>Gracias por tu apoyo a Elbio Universitario. Te contactamos en menos de 24 horas para coordinar la entrega.</p>
+        <h2>¡Pago concretado!</h2>
+        <p>Tu pago fue procesado con éxito. Nos comunicaremos con vos por WhatsApp a la brevedad para coordinar la entrega.</p>
         <button onclick="resetOrder()" style="background:var(--navy);color:white;border:none;border-radius:8px;padding:11px 26px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500">Ver más productos</button>
+      </div>
+    </div>
+    <div id="order-pending" style="display:none">
+      <div class="success-screen">
+        <div class="success-icon" style="background:#C99A28;">⚠</div>
+        <h2>Pago no completado</h2>
+        <p>Guardamos tu pedido pero el pago quedó pendiente. Podés intentarlo de nuevo o contactarnos por WhatsApp.</p>
+        <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
+          <button onclick="retryPayment()" style="background:var(--navy);color:white;border:none;border-radius:8px;padding:11px 26px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500">Intentar de nuevo</button>
+          <a href="https://wa.me/59899019892" target="_blank" style="background:#25D366;color:white;text-decoration:none;border-radius:8px;padding:11px 26px;font-size:13px;font-weight:500;">Contactar por WhatsApp</a>
+        </div>
       </div>
     </div>
   </div>
@@ -1378,7 +1389,7 @@ document.addEventListener('keydown', function(e) {
 
 <script>
 const ADMIN_PASSWORD = 'ElbioCampeon2025';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEkMuKCVfla50Rtk4Mk4YPNVSdsK81LKCaGbpGv0xNr3rCeYtrWWhpRqFfiKCyZVJu/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwWM_6X19FqxZaN1tjuDko2RvfTN2XTEZKjm1HpCtxqe3UhN9K4vvm5o4Z_o52_vnFhDA/exec';
 
 const DEFAULT_PRODUCTS = [];
 
@@ -1659,14 +1670,16 @@ function goToOrder() {
   </div>`;
 }
 
-// ── PEDIDO ────────────────────────────────────────────────────────────────────
+// ── PEDIDO / PAGO DLOCAL ─────────────────────────────────────────────────────
+let _pendingOrderId = null;
+
 function submitOrder() {
-  const name = document.getElementById('f-name').value.trim();
-  const phone = document.getElementById('f-phone').value.trim();
-  const email = document.getElementById('f-email').value.trim();
+  const name      = document.getElementById('f-name').value.trim();
+  const phone     = document.getElementById('f-phone').value.trim();
+  const email     = document.getElementById('f-email').value.trim();
   const referente = document.getElementById('f-referente').value.trim();
-  const notes = document.getElementById('f-notes').value.trim();
-  
+  const notes     = document.getElementById('f-notes').value.trim();
+
   if (!name || !phone || !email) {
     showToast('Completá nombre, WhatsApp y email');
     return;
@@ -1674,72 +1687,110 @@ function submitOrder() {
 
   const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
   const orderId = Date.now().toString().slice(-8);
+  _pendingOrderId = orderId;
   const productList = cart.map(item => `${item.name} x${item.qty}`).join(', ');
 
-  const templateParams = {
-    email: email,
-    name: name,
-    phone: phone,
-    referente: referente || 'No especificado',
-    order_id: orderId,
-    items: productList,
-    total: '$' + total.toLocaleString()
-  };
+  const btn = document.getElementById('pay-btn');
+  btn.textContent = 'Procesando...';
+  btn.disabled = true;
 
-  console.log('=== DATOS DEL PEDIDO ===');
-  console.log('Service ID: service_kz8rtix');
-  console.log('Template ID: template_oae45lb');
-  console.log('Parámetros:', templateParams);
-
-  showToast('Enviando pedido...');
-
+  // 1. Guardar en Sheets con estado "A medias"
   fetch(SCRIPT_URL, {
-    method: "POST",
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({
       type: 'order',
       name, phone, email, referente,
-      items: cart.map(i => `${i.name} x${i.qty}`).join(", "),
-      notes: notes
+      items: productList,
+      notes,
+      order_id: orderId,
+      estado: 'A medias',
+      total: '$' + total.toLocaleString()
+    })
+  }).catch(() => {});
+
+  // 2. Crear link de pago via Apps Script → dLocal Go
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({
+      type: 'create_payment',
+      amount: total,
+      currency: 'UYU',
+      country: 'UY',
+      order_id: orderId,
+      description: `Pedido #${orderId} - Elbio Universitario`,
+      payer_name: name,
+      payer_email: email,
+      success_url: 'https://clubelbiouniversitario.com/?payment=success&order=' + orderId,
+      back_url: 'https://clubelbiouniversitario.com/?payment=cancelled&order=' + orderId,
+      notification_url: SCRIPT_URL
     })
   })
-  .then(res => res.text())
-  .then(() => {
-    console.log('✓ Pedido guardado en Sheets');
-    console.log('Intentando enviar email...');
-    return emailjs.send('service_kz8rtix', 'template_oae45lb', templateParams);
+  .then(r => r.json())
+  .then(data => {
+    if (data && data.redirect_url) {
+      window.location.href = data.redirect_url;
+    } else {
+      showToast('Error al generar el link de pago. Intentá de nuevo.');
+      btn.textContent = 'Ir a pagar →';
+      btn.disabled = false;
+    }
   })
-  .then((response) => {
-    console.log('✓ EMAIL ENVIADO EXITOSAMENTE!', response);
-    console.log('Status:', response.status);
-    console.log('Text:', response.text);
-    document.getElementById('order-form-area').style.display = 'none';
-    document.getElementById('order-success').style.display = 'block';
-    cart = [];
-    saveCart();
-    updateCartCount();
-    showToast('¡Pedido confirmado y email enviado! ✓');
-  })
-  .catch((error) => {
-    console.error('✗ ERROR AL ENVIAR EMAIL:', error);
-    console.error('Tipo de error:', error.name);
-    console.error('Mensaje:', error.message);
-    console.error('Status:', error.status);
-    console.error('Text:', error.text);
-    // El pedido se guardó igual en Sheets
-    document.getElementById('order-form-area').style.display = 'none';
-    document.getElementById('order-success').style.display = 'block';
-    cart = [];
-    saveCart();
-    updateCartCount();
-    showToast('Pedido guardado (revisar consola para email)');
+  .catch(() => {
+    showToast('Error de conexión. Intentá de nuevo.');
+    btn.textContent = 'Ir a pagar →';
+    btn.disabled = false;
   });
+}
+
+function retryPayment() {
+  document.getElementById('order-pending').style.display = 'none';
+  document.getElementById('order-form-area').style.display = 'block';
+  const btn = document.getElementById('pay-btn');
+  btn.textContent = 'Ir a pagar →';
+  btn.disabled = false;
 }
 
 function resetOrder() {
   document.getElementById('order-form-area').style.display = 'block';
   document.getElementById('order-success').style.display = 'none';
+  document.getElementById('order-pending').style.display = 'none';
+  const btn = document.getElementById('pay-btn');
+  if (btn) { btn.textContent = 'Ir a pagar →'; btn.disabled = false; }
   ['f-name','f-phone','f-email','f-referente','f-notes'].forEach(id => document.getElementById(id).value='');
   showSection('catalog');
+}
+
+function checkPaymentReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get('payment');
+  const orderId = params.get('order');
+  if (!payment) return;
+
+  window.history.replaceState({}, '', window.location.pathname);
+  showSection('order');
+  document.getElementById('order-form-area').style.display = 'none';
+
+  if (payment === 'success') {
+    fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ type: 'update_order_status', order_id: orderId, estado: 'Pagado' })
+    }).catch(() => {});
+    cart = [];
+    saveCart();
+    updateCartCount();
+    document.getElementById('order-success').style.display = 'block';
+  } else if (payment === 'cancelled') {
+    fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ type: 'update_order_status', order_id: orderId, estado: 'Fallido' })
+    }).catch(() => {});
+    document.getElementById('order-pending').style.display = 'block';
+  }
 }
 
 // ── ADMIN ─────────────────────────────────────────────────────────────────────
@@ -2593,6 +2644,7 @@ loadMatchesFromSheets();  // Carga partidos desde Sheets
 loadBeneficiosFromSheets();
 loadColabsFromSheets();
 loadVisibility();
+checkPaymentReturn();
 initTweaks();
 // Restaurar sección activa al refrescar
 (function() {
