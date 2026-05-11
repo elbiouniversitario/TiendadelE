@@ -716,14 +716,14 @@ document.addEventListener('keydown', function(e) {
     <li><a onclick="navClick('club')" id="nav-club">El club</a></li>
     <li><a onclick="navClick('partidos')" id="nav-partidos">Próximos partidos</a></li>
     <li><a onclick="navClick('sponsors')" id="nav-sponsors">Colaboradores</a></li>
-    <li><a onclick="navClick('cuota')" id="nav-cuota">Cuota Social</a></li>
+    <!-- CUOTA OCULTA: <li><a onclick="navClick('cuota')" id="nav-cuota">Cuota Social</a></li> -->
     <li><a onclick="navClick('contacto')" id="nav-contacto">Contacto</a></li>
   </ul>
   <div class="nav-right">
     <button class="cart-btn" onclick="showSection('cart')">
       🛒 <span id="cart-count-nav" class="cart-count" style="display:none">0</span><span class="cart-label"> Carrito</span>
     </button>
-    <button class="hacete-socio-btn" onclick="showSection('cuota')" aria-label="Hacete socio">HACETE SOCIO</button>
+    <!-- CUOTA OCULTA: <button class="hacete-socio-btn" onclick="showSection('cuota')" aria-label="Hacete socio">HACETE SOCIO</button> -->
     <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menú">
       <span></span><span></span><span></span>
     </button>
@@ -1193,8 +1193,8 @@ document.addEventListener('keydown', function(e) {
 </section>
 
 
-<!-- CUOTA SOCIAL -->
-<section id="sec-cuota">
+<!-- CUOTA SOCIAL - TEMPORALMENTE OCULTA (quitar display:none para reactivar) -->
+<section id="sec-cuota" style="display:none">
   <div class="page-wrap" style="max-width:900px">
     <div class="page-head">
       <p class="page-tag">Apoyá al club</p>
@@ -1370,7 +1370,7 @@ document.addEventListener('keydown', function(e) {
     <a onclick="showSection('club')">El club</a>
     <a onclick="showSection('partidos')">Agenda</a>
     <a onclick="showSection('sponsors')">Colaboradores</a>
-    <a onclick="showSection('cuota')">Cuota Social</a>
+    <!-- CUOTA OCULTA: <a onclick="showSection('cuota')">Cuota Social</a> -->
     <a onclick="showSection('contacto')">Contacto</a>
   </div>
   <div style="margin-top:1.25rem;font-size:11px;opacity:.5">© 2026 Elbio Universitario</div>
