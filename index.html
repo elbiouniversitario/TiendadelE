@@ -1389,7 +1389,7 @@ document.addEventListener('keydown', function(e) {
 
 <script>
 const ADMIN_PASSWORD = 'ElbioU2002';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYdPtPx8MMq6fPmsA93UTT31s4cQNxaMsOSa4-T99l5YR9vD2fNUk7YOON-3mjh3PZYg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw96HiXbC6zIWAvnwT-o5u8sz9l5LISBQof1VkXb4-_WUYZNU_dqblX223yWxbzZYgeew/exec';
 
 const DEFAULT_PRODUCTS = [];
 
@@ -1710,8 +1710,14 @@ function submitOrder() {
     })
   }).catch(() => {});
 
-  // 2. Abrir el Apps Script directamente — él llama a dLocal y redirige
-  const paymentParams = new URLSearchParams({
+  // 2. Usar el Worker de Cloudflare para crear el pago (sin CORS ni sandbox)
+  const WORKER_URL = 'https://elbio-pagos.elbiouniversitario2023.workers.dev';
+  const form = document.createElement('form');
+  form.method = 'GET';
+  form.action = WORKER_URL;
+  form.target = '_self';
+
+  const fields = {
     type: 'create_payment',
     amount: total,
     currency: 'UYU',
@@ -1722,10 +1728,19 @@ function submitOrder() {
     payer_email: email,
     success_url: 'https://clubelbiouniversitario.com/?payment=success&order=' + orderId,
     back_url: 'https://clubelbiouniversitario.com/?payment=cancelled&order=' + orderId
+  };
+
+  Object.entries(fields).forEach(([key, val]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = val;
+    form.appendChild(input);
   });
 
-  // Redirigir directo — el Apps Script llama a dLocal y redirige al checkout
-  window.location.href = SCRIPT_URL + '?' + paymentParams.toString();
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
 }
 
 function retryPayment() {
