@@ -196,7 +196,7 @@ async function canjear() {
   resultBox.style.display = 'none';
 
   try {
-    const res = await fetch(SCRIPT_URL + '?type=verify_penca_code&codigo=' + encodeURIComponent(codigo));
+    const res = await fetch('https://elbio-pagos.elbiouniversitario2023.workers.dev/?type=verify_penca_code&codigo=' + encodeURIComponent(codigo));
     const data = await res.json();
 
     if (data.ok && data.link) {
