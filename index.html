@@ -855,14 +855,73 @@ document.addEventListener('keydown', function(e) {
     </div>
 
     <div id="order-success-penca" style="display:none">
-      <div class="success-screen">
-        <div class="success-icon">✓</div>
-        <h2>¡Pago concretado!</h2>
-        <p style="margin-bottom:0.5rem">Tu acceso a la <strong>Penca Elbio</strong> fue confirmado. Este es tu código de canje:</p>
-        <div style="background:var(--navy);color:var(--gold);font-size:1.6rem;font-weight:700;letter-spacing:0.18em;padding:14px 24px;border-radius:10px;margin:1rem auto;display:inline-block;font-family:monospace;" id="penca-codigo-display">cargando...</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:1.25rem">Guardá este código — lo vas a necesitar para entrar a la penca.</p>
+      <style>
+        @keyframes pencaSpin { to { transform: rotate(360deg); } }
+        @keyframes pencaPulse { 0%,100%{opacity:.4;transform:scale(.97)} 50%{opacity:1;transform:scale(1.01)} }
+        @keyframes pencaReveal { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        .penca-loading-ring {
+          width:64px;height:64px;border-radius:50%;
+          border:4px solid var(--gold-light);
+          border-top-color:var(--gold);
+          animation:pencaSpin .9s linear infinite;
+          margin:0 auto 1.25rem;
+        }
+        .penca-loading-label {
+          font-size:13px;color:var(--muted);
+          animation:pencaPulse 1.4s ease-in-out infinite;
+          margin-bottom:.5rem;
+        }
+        .penca-loading-steps {
+          display:flex;flex-direction:column;gap:6px;
+          margin:1rem auto;max-width:220px;
+        }
+        .penca-step {
+          display:flex;align-items:center;gap:8px;
+          font-size:12px;color:var(--muted);
+          transition:color .4s;
+        }
+        .penca-step.done { color:var(--navy);font-weight:600; }
+        .penca-step .dot {
+          width:8px;height:8px;border-radius:50%;
+          background:var(--border);flex-shrink:0;
+          transition:background .4s;
+        }
+        .penca-step.done .dot { background:var(--gold); }
+        #penca-result-area {
+          display:none;
+          animation:pencaReveal .5s ease forwards;
+        }
+        .penca-codigo-box {
+          background:var(--navy);color:var(--gold);
+          font-size:1.55rem;font-weight:700;letter-spacing:0.18em;
+          padding:15px 28px;border-radius:12px;
+          margin:1rem auto .5rem;display:inline-block;
+          font-family:monospace;
+          border:2px solid rgba(201,168,76,.35);
+        }
+      </style>
+
+      <!-- Estado: cargando -->
+      <div id="penca-loading-area" class="success-screen">
+        <div class="penca-loading-ring"></div>
+        <h2 style="color:var(--navy);margin-bottom:.3rem">Generando tu código</h2>
+        <p class="penca-loading-label">Estamos preparando tu acceso a la penca…</p>
+        <div class="penca-loading-steps">
+          <div class="penca-step done" id="ps1"><div class="dot"></div>Pago confirmado</div>
+          <div class="penca-step" id="ps2"><div class="dot"></div>Creando código único</div>
+          <div class="penca-step" id="ps3"><div class="dot"></div>Asignando acceso</div>
+        </div>
+      </div>
+
+      <!-- Estado: código listo -->
+      <div id="penca-result-area" class="success-screen">
+        <div class="success-icon" style="background:#1B6B3A;">🏆</div>
+        <h2>¡Tu código está listo!</h2>
+        <p style="margin-bottom:.25rem;font-size:14px;">Guardalo — lo necesitás para entrar a la penca.</p>
+        <div class="penca-codigo-box" id="penca-codigo-display">—</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:1.5rem;">Hacé clic en el botón para canjear tu acceso ahora.</p>
         <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
-          <a id="penca-canje-btn" href="#" target="_blank" style="background:var(--gold);color:var(--navy);text-decoration:none;border-radius:8px;padding:11px 28px;font-size:13px;font-weight:700;letter-spacing:0.04em;">🏆 Canjear mi acceso</a>
+          <a id="penca-canje-btn" href="#" target="_blank" style="background:var(--gold);color:var(--navy);text-decoration:none;border-radius:8px;padding:12px 32px;font-size:14px;font-weight:700;letter-spacing:0.04em;">🏆 Canjear mi acceso</a>
           <button onclick="resetOrder()" style="background:none;color:var(--muted);border:none;font-size:12px;cursor:pointer;font-family:inherit;padding:4px 10px;">Ver más productos</button>
         </div>
       </div>
@@ -1403,7 +1462,7 @@ document.addEventListener('keydown', function(e) {
 
 <script>
 const ADMIN_PASSWORD = 'ElbioU2002';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzkibM6PI2oF29eqtujt6bLOz57kBvXNPt_x-3nIGNt2HK3b3hheYVpDuxcaiV7JAgc/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw96HiXbC6zIWAvnwT-o5u8sz9l5LISBQof1VkXb4-_WUYZNU_dqblX223yWxbzZYgeew/exec';
 
 const DEFAULT_PRODUCTS = [];
 
@@ -1808,19 +1867,36 @@ function checkPaymentReturn() {
 
     if (pencaData && pencaData.orderId === orderId) {
       localStorage.removeItem('elef_penca_order');
-      // Pedir código al Apps Script (con fetch normal, necesitamos la respuesta)
-      fetch(SCRIPT_URL + '?type=generate_penca_code&order_id=' + orderId + '&email=' + encodeURIComponent(pencaData.email))
+      document.getElementById('order-success-penca').style.display = 'block';
+
+      // Animar paso 2 después de 600ms
+      setTimeout(() => {
+        const ps2 = document.getElementById('ps2');
+        if (ps2) ps2.classList.add('done');
+      }, 600);
+
+      fetch('https://elbio-pagos.elbiouniversitario2023.workers.dev/?type=get_penca_code&order_id=' + orderId + '&email=' + encodeURIComponent(pencaData.email))
         .then(r => r.json())
         .then(data => {
-          if (data.codigo) {
-            document.getElementById('penca-codigo-display').textContent = data.codigo;
-            document.getElementById('penca-canje-btn').href = 'https://clubelbiouniversitario.com/penca.html?codigo=' + data.codigo;
-            document.getElementById('order-success-penca').style.display = 'block';
-          } else {
-            document.getElementById('order-success').style.display = 'block';
-          }
+          // Animar paso 3
+          const ps3 = document.getElementById('ps3');
+          if (ps3) ps3.classList.add('done');
+
+          setTimeout(() => {
+            if (data.codigo) {
+              document.getElementById('penca-codigo-display').textContent = data.codigo;
+              document.getElementById('penca-canje-btn').href = 'https://clubelbiouniversitario.com/penca.html?codigo=' + data.codigo;
+            }
+            // Transición: ocultar loading, mostrar resultado
+            const loadingArea = document.getElementById('penca-loading-area');
+            const resultArea  = document.getElementById('penca-result-area');
+            if (loadingArea) loadingArea.style.display = 'none';
+            if (resultArea)  resultArea.style.display  = 'block';
+          }, 700);
         })
         .catch(() => {
+          // Fallback: mostrar pantalla genérica
+          document.getElementById('order-success-penca').style.display = 'none';
           document.getElementById('order-success').style.display = 'block';
         });
     } else {
